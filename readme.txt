@@ -1,6 +1,6 @@
 === Facebook Page Publish ===
 Contributors: mtschirs
-Tags: posts
+Tags: posts facebook page publish
 Requires at least: 3.0
 Tested up to: 3.1
 Stable tag: trunk
@@ -9,13 +9,13 @@ Stable tag: trunk
 
 == Description ==
 
-"Facebook Page Publish" publishes your blog posts to your fan page! Posts appear on the wall of your fan page as if you would share a link. The authors gravatar or a random post image, the title, categories and a short excerpt of your post are shown.
+"Facebook Page Publish" publishes your blog posts to your fan page! Posts appear on the wall of your fan page as if you would share a link. The authors [gravatar](http://gravatar.com) or a random post image, the title, categories and a short excerpt of your post are shown.
 
 Decide yourself when and what post to publish to your page.
 
 Uses the modern facebook graph-API and integrates easily into your WordPress Blog.
 
-All you need is:
+All you need is (see **Installation**):
 
 * A facebook application (application ID + secret)
 * A facebook fan page (page ID)
@@ -27,9 +27,14 @@ Technical features:
 
 == Installation ==
 
-1. Upload the plugin folder to the `/wp-content/plugins/` directory
-2. Activate the plugin through the 'Plugins' menu in WordPress
-3. Go to the plugin's settings page and fill in: Application ID + secret, Page ID
+1. Install the plugin from your wordpress admin panel.
+
+OR
+
+1. Upload the plugin folder to the `/wp-content/plugins/` directory.
+2. Activate the plugin through the 'Plugins' menu in WordPress.
+
+Done? Then go to the plugin's settings page and follow the detailed setup instructions.
 
 == Frequently Asked Questions ==
 
@@ -45,10 +50,10 @@ Please use the forum.
 
 == Changelog ==
 
-= 0.1 =
+= 0.1.0 =
 * First internal release.
 
-= 0.2 =
+= 0.2.0 =
 * Security: Only authors can publish to facebook.
 * Bugfix: Only posts can be published (no pages etc.).
 * Bugfix: Character encoding for categories and title fixed.
@@ -56,5 +61,5 @@ Please use the forum.
 
 == Upgrade Notice ==
 
-= 0.2 =
+= 0.2.0 =
 First stable version.
