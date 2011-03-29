@@ -18,7 +18,7 @@
  * 
  * 
  * Plugin Name: Facebook Page Publish
- * Plugin URI:  http://wordpress.org/#
+ * Plugin URI:  http://wordpress.org/extend/plugins/facebook-page-publish/
  * Description: Publishes your posts on the wall of a facebook page.
  * Author:      Martin Tschirsich
  * Version:     0.2.0
@@ -250,6 +250,7 @@ function fpp_render_options_page() {
                 <p>Configure the plugin options below</p>
                 <form method="post" action="options.php">
                         <h3>Facebook Connection</h3>
+                        <a target="_blank" href="<?php echo WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__), '', plugin_basename(__FILE__)); ?>setup.htm">Detailed Setup Instructions</a>
                         <table class="form-table">
                                 <?php settings_fields('fpp_options_group'); ?>
                                 <tr valign="top">
@@ -363,7 +364,7 @@ function fpp_render_post_button() {
                 <div><em>Can't be undone!</em></div>
                 <?php
         } else {
-                        ?>
+                ?>
                 <label for="fpp_post_to_facebook">Post again to Facebook </label><input type="checkbox" value="1" id="fpp_post_to_facebook" name="fpp_post_to_facebook" />
                 <div><em>Can't be undone!</em></div>
                 <?php

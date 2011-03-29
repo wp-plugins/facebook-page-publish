@@ -17,7 +17,7 @@ Uses the modern facebook graph-API and integrates easily into your WordPress Blo
 
 All you need is:
 
-* An facebook application (application ID + secret)
+* A facebook application (application ID + secret)
 * A facebook fan page (page ID)
 
 Technical features:
