@@ -15,7 +15,7 @@ Decide yourself when and what post to publish to your page.
 
 Uses the modern facebook graph-API and integrates easily into your WordPress Blog.
 
-All you need is (see **Installation**):
+All you need is (see *Installation*):
 
 * A facebook application (application ID + secret)
 * A facebook fan page (page ID)
