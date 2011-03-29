@@ -27,6 +27,7 @@
 
 #error_reporting(E_ALL);
 define("BASEDIR", dirname(__file__));
+define("BASEURL", WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
 
 add_action('edit_post', 'fpp_publish_action');
 add_action('admin_init', 'fpp_admin_init_action');
@@ -53,7 +54,7 @@ function fpp_activation_hook() {
 function fpp_head_action() {
         global $post;
 
-        if (is_object($post) && empty($post->post_password) && ($post->post_type == 'post')) {
+        if (is_object($post) && empty($post->post_password) && ($post->post_type == 'post') && is_single()) {
                 fpp_render_meta_tags($post);
         }
 }
@@ -250,7 +251,7 @@ function fpp_render_options_page() {
                 <p>Configure the plugin options below</p>
                 <form method="post" action="options.php">
                         <h3>Facebook Connection</h3>
-                        <a target="_blank" href="<?php echo WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__), '', plugin_basename(__FILE__)); ?>setup.htm">Detailed Setup Instructions</a>
+                        <a target="_blank" href="<?php echo BASEURL; ?>setup.htm">Detailed Setup Instructions</a>
                         <table class="form-table">
                                 <?php settings_fields('fpp_options_group'); ?>
                                 <tr valign="top">
@@ -331,7 +332,7 @@ function fpp_render_meta_tags($post) {
 
         if (!isset($image_url)) {
                 preg_match_all('/<img .*src=["|\']([^"|\']+)/i', $post->post_content, $matches);
-                if (!empty($matches[1][0])) $imageUrl = $matches[1][0];
+                if (!empty($matches[1][0])) $image_url = $matches[1][0];
         }
 
         if (!isset($image_url)) {
@@ -347,8 +348,9 @@ function fpp_render_meta_tags($post) {
 
         #echo '<meta property="og:site_name" content="'.htmlentities(get_bloginfo('url')).'"/>';
         #echo '<meta property="og:title" content="'.htmlentities($post->post_title).'"/>';
-        if (isset($description)) echo '<meta name="og:description" content="'.htmlspecialchars($description,ENT_COMPAT,'UTF-8').'"/>';
-        if (isset($image_url)) echo '<meta name="og:image" content="'.htmlspecialchars($image_url,ENT_COMPAT,'UTF-8').'"/>';
+        if (isset($description)) echo '<meta property="og:description" content="'.htmlspecialchars($description, ENT_COMPAT, 'UTF-8').'"/>';
+        if (isset($image_url)) echo '<meta property="og:image" content="'.htmlspecialchars($image_url, ENT_COMPAT, 'UTF-8').'"/>';
+        else echo '<meta property="og:image" content="'.BASEURL.'default.png"/>'; // No image (prevents FB from choosing a poor random image).
 }
 
 /**

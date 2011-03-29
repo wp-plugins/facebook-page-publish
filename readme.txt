@@ -1,6 +1,6 @@
 === Facebook Page Publish ===
 Contributors: mtschirs
-Tags: posts facebook page publish
+Tags: posts, facebook, page, publish
 Requires at least: 3.0
 Tested up to: 3.1
 Stable tag: trunk
@@ -51,7 +51,7 @@ Please use the forum.
 == Changelog ==
 
 = 0.1.0 =
-* First internal release.
+* First internal alpha release.
 
 = 0.2.0 =
 * Security: Only authors can publish to facebook.
@@ -59,7 +59,13 @@ Please use the forum.
 * Bugfix: Character encoding for categories and title fixed.
 * Bugfix: Facebook link description length is 420 chars max.
 
+= 0.2.1 =
+* Bugfix: Not all images in a post where found.
+* Bugfix: Default transparent image prevents FB from choosing a poor random image for posts containing no images.
+* Bugfix: Graph meta tags are now only rendered when displaying a single post.
+* Update: Detailed setup instructions now available from the options page.
+
 == Upgrade Notice ==
 
-= 0.2.0 =
-First stable version.
+= 0.2.1 =
+Bugfix, upgrade recommended.
