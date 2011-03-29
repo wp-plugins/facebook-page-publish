@@ -21,7 +21,7 @@
  * Plugin URI:  http://wordpress.org/extend/plugins/facebook-page-publish/
  * Description: Publishes your posts on the wall of a facebook page.
  * Author:      Martin Tschirsich
- * Version:     0.2.0
+ * Version:     0.2.1
  * Author URI:  http://usr.bplaced.de/
  */
 
