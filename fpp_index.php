@@ -28,6 +28,7 @@
 #error_reporting(E_ALL);
 define("BASEDIR", dirname(__file__));
 define("BASEURL", WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
+define("SSL_VERIFY", true);
 
 add_action('edit_post', 'fpp_publish_action');
 add_action('admin_init', 'fpp_admin_init_action');
@@ -130,7 +131,7 @@ function fpp_publish_to_facebook($post, $page_id, $acces_token) {
         $api_url = 'https://graph.facebook.com/'.urlencode($page_id).'/links';
         $body = array('message' => $message, 'link' => get_permalink($post->ID), 'access_token' => $acces_token);
         $request = new WP_Http;
-        $response = $request->request($api_url, array('method' => 'POST', 'body' => $body));
+        $response = $request->request($api_url, array('method' => 'POST', 'body' => $body, 'sslverify' => SSL_VERIFY));
 
         $return = array();
         if (array_key_exists('errors', $response))
@@ -151,7 +152,7 @@ function fpp_check_connection_to_facebook($page_id, $page_access_token) {
         $api_url = 'https://graph.facebook.com/'.urlencode($page_id).'/links';
         $body = array('message' => 'dummy message', 'link' => 'invalid url', 'access_token' => $page_access_token);
         $request = new WP_Http;
-        $response = $request->request($api_url, array('method' => 'POST', 'body' => $body));
+        $response = $request->request($api_url, array('method' => 'POST', 'body' => $body, 'sslverify' => SSL_VERIFY));
 
         if (array_key_exists('errors', $response))
                 return array('result' => 'connection_error', 'message' => 'Facebook not reachable: '.(empty($response->errors) ? 'unknown error' : array_pop(array_pop($response->errors))));
@@ -169,7 +170,7 @@ function fpp_check_connection_to_facebook($page_id, $page_access_token) {
 function fpp_is_valid_facebook_app($app_id) {
         $request = new WP_Http;
         $api_url = 'https://graph.facebook.com/'.urlencode($app_id);
-        $response = $request->get($api_url);
+        $response = $request->get($api_url, array('sslverify' => SSL_VERIFY));
 
         if (array_key_exists('errors', $response)) // Facebook is unreachable, return null.
                 return null;
@@ -189,7 +190,7 @@ function fpp_retrieve_page_access($app_id, $app_secret, $page_id, $redirect_uri,
         // Retrieve access-token (pems: manage pages, offline access) for the user:
         $request = new WP_Http;
         $api_url = 'https://graph.facebook.com/oauth/access_token?client_id='.urlencode($app_id).'&redirect_uri='.urlencode($redirect_uri).'&client_secret='.urlencode($app_secret).'&code='.urlencode($code);
-        $response = $request->get($api_url);
+        $response = $request->get($api_url, array('sslverify' => SSL_VERIFY));
 
         if (array_key_exists('errors', $response))
                 return array('result' => 'connection_error', 'message' => 'Facebook not reachable: '.(empty($response->errors) ? 'unknown error' : array_pop(array_pop($response->errors))));
@@ -202,7 +203,7 @@ function fpp_retrieve_page_access($app_id, $app_secret, $page_id, $redirect_uri,
 
         // Request accounts object:
         $api_url = 'https://graph.facebook.com/me/accounts?'.$access_token_url;
-        $response = $request->get($api_url);
+        $response = $request->get($api_url, array('sslverify' => SSL_VERIFY));
 
         if (array_key_exists('errors', $response))
                 return array('result' => 'connection_error', 'message' => 'Facebook not reachable: '.(empty($response->errors) ? 'unknown error' : array_pop(array_pop($response->errors))));
@@ -305,6 +306,9 @@ function fpp_render_options_page() {
                                 <input type="submit" class="button-primary" value="<?php _e('Save Changes') ?>" />
                         </p>
                 </form>
+                <?php
+                if (!SSL_VERIFY) echo '<div class="updated"><p><strong>Info:</strong> SSL verification manually turned off</p></div>';
+                ?>
         </div>
         <?php
 }
