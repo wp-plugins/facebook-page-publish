@@ -120,8 +120,12 @@ function fpp_post_submitbox_start_action() {
 function fpp_publish_to_facebook($post, $page_id, $acces_token) {
         if (!class_exists('WP_Http')) include_once(ABSPATH.WPINC.'/class-http.php');
 
-        $message = stripslashes(htmlspecialchars_decode(addslashes(wp_filter_nohtml_kses(strip_shortcodes( empty($post->post_excerpt) ? $post->post_content : $post->post_excerpt)))));
+        $message = stripslashes(htmlspecialchars_decode(wp_filter_nohtml_kses(strip_shortcodes(empty($post->post_excerpt) ? $post->post_content : $post->post_excerpt))));
 
+        if (strpos($message, '<!--more-->') !== false) {
+                $message = substr($message, 0, strpos($message, '<!--more-->'));
+        }
+        
         // Facebook link description allows max. 420 characters:
         if (strlen($message) >= 420) {
                 $last_space_pos = strrpos(substr($message, 0, 417), ' ');
