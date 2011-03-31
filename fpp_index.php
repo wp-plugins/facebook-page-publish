@@ -21,7 +21,7 @@
  * Plugin URI:  http://wordpress.org/extend/plugins/facebook-page-publish/
  * Description: Publishes your posts on the wall of a facebook page.
  * Author:      Martin Tschirsich
- * Version:     0.2.1
+ * Version:     0.2.2
  * Author URI:  http://usr.bplaced.de/
  */
 
@@ -29,6 +29,7 @@
 define("BASEDIR", dirname(__file__));
 define("BASEURL", WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
 define("SSL_VERIFY", true);
+define("ALWAYS_POST_TO_FACEBOOK", true);
 
 add_action('edit_post', 'fpp_publish_action');
 add_action('admin_init', 'fpp_admin_init_action');
@@ -370,7 +371,7 @@ function fpp_render_post_button() {
 
         if (array_pop(get_post_meta($post->ID, '_fpp_post_to_facebook')) != 'posted') {
                 ?>
-                <label for="fpp_post_to_facebook">Post to Facebook </label><input type="checkbox" value="1" id="fpp_post_to_facebook" name="fpp_post_to_facebook" />
+                <label for="fpp_post_to_facebook">Post to Facebook </label><input <?php if (ALWAYS_POST_TO_FACEBOOK) echo 'checked="checked"' ?> type="checkbox" value="1" id="fpp_post_to_facebook" name="fpp_post_to_facebook" />
                 <div><em>Can't be undone!</em></div>
                 <?php
         } else {

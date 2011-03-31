@@ -65,7 +65,15 @@ Please use the forum.
 * Bugfix: Graph meta tags are now only rendered when displaying a single post.
 * Update: Detailed setup instructions now available from the options page.
 
+= 0.2.2 =
+* Bugfix: <!--more--> tags now recognized (thanks to *tbjers*!).
+* Bugfix: Apostrophes (') no longer slashed (thanks to *dmeglio*!).
+* Update: SSL_VERIFY and ALWAYS_POST_TO_FACEBOOK constants for manual configuration.
+
 == Upgrade Notice ==
 
 = 0.2.1 =
-Bugfix, upgrade recommended.
+Bugfixes, upgrade recommended.
+
+= 0.2.2 =
+Bugfixes, upgrade recommended.
