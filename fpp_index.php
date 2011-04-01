@@ -31,7 +31,24 @@ define("BASEURL", WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__), '', plugin_
 define("SSL_VERIFY", true);
 define("ALWAYS_POST_TO_FACEBOOK", true);
 
-add_action('edit_post', 'fpp_publish_action');
+add_action('pending_to_publish', 'fpp_publish_action');
+add_action('publish_to_publish', 'fpp_publish_action');
+add_action('draft_to_publish', 'fpp_publish_action');
+add_action('auto-draft_to_publish', 'fpp_publish_action');
+add_action('future_to_publish', 'fpp_publish_action');
+add_action('private_to_publish', 'fpp_publish_action');
+add_action('inherit_to_publish', 'fpp_publish_action');
+add_action('trash_to_publish', 'fpp_publish_action');
+
+add_action('pending_to_future', 'fpp_future_action');
+add_action('publish_to_future', 'fpp_future_action');
+add_action('draft_to_future', 'fpp_future_action');
+add_action('auto-draft_to_future', 'fpp_future_action');
+add_action('future_to_future', 'fpp_future_action');
+add_action('private_to_future', 'fpp_future_action');
+add_action('inherit_to_future', 'fpp_future_action');
+add_action('trash_to_future', 'fpp_future_action');
+
 add_action('admin_init', 'fpp_admin_init_action');
 add_action('admin_menu', 'fpp_admin_menu_action');
 add_action('wp_head', 'fpp_head_action');
@@ -62,25 +79,51 @@ function fpp_head_action() {
 }
 
 /**
- * Called on edit_post (preview, change, publish) only if fpp_post_to_facebook-post-variable is set.
- * Publishes the given post to facebook.
+ * Called on any_to_future action (post state becomes scheduled).
+ * Publishes the given post to facebook if the user wished to do so.
+ */
+function fpp_future_action($post_id) {
+        $post_to_facebook = isset($_REQUEST['fpp_post_to_facebook']) && !empty($_REQUEST['fpp_post_to_facebook']);
+         
+        $post = get_post($post_id);
+        if (($post->post_type == 'post') && empty($post->post_password)) {
+    
+                if ($post_to_facebook) { // Directly send from the user with active checkbox
+                        try {
+                                $options = get_option('fpp_options');
+                                update_post_meta($post->ID, '_fpp_is_scheduled', true);
+                        } catch (exception $exception) {}
+                }
+        }
+}
+
+/**
+ * Called on any_to_publish action (post state becomes published).
+ * Publishes the given post to facebook if the user wished to do so.
  *
  * @see fpp_render_post_button()
  */
 function fpp_publish_action($post_id) {
         $post_to_facebook = isset($_REQUEST['fpp_post_to_facebook']) && !empty($_REQUEST['fpp_post_to_facebook']);
          
-        if ($post_to_facebook) {
-                try {
-                        $post = get_post($post_id);
-                        if (($post->post_type == 'post') && empty($post->post_password)) {
+        $post = get_post($post_id);
+        if (($post->post_type == 'post') && empty($post->post_password)) {
+    
+                if ($post_to_facebook) { // Directly send from the user with active checkbox
+                        try {
                                 $options = get_option('fpp_options');
                                 fpp_publish_to_facebook($post, $options['page_id'], get_option('fpp_page_access_token'));
-                                add_post_meta($post->ID, '_fpp_post_to_facebook', 'posted');
+                                update_post_meta($post->ID, '_fpp_is_published', true);
+                        } catch (exception $exception) {
+                                wp_die('An exception occured in your Facebook Page Publish plugin: '.$exception->getMessage().
+                                       '<br>Please inform the author and/or deactivate the plugin.');
                         }
-                } catch (exception $exception) {
-                        wp_die('An exception occured in your Facebook Page Publish plugin: '.$exception->getMessage().
-                               '<br>Please inform the author and/or deactivate the plugin.');
+                }
+                else if (array_pop(get_post_meta($post->ID, '_fpp_is_scheduled')) == true) { // Scheduled post with active checkbox on schedule action
+                        $options = get_option('fpp_options');
+                        fpp_publish_to_facebook($post, $options['page_id'], get_option('fpp_page_access_token'));
+                        update_post_meta($post->ID, '_fpp_is_scheduled', false);
+                        update_post_meta($post->ID, '_fpp_is_published', true);
                 }
         }
 }
@@ -369,7 +412,7 @@ function fpp_render_meta_tags($post) {
 function fpp_render_post_button() {
         global $post;
 
-        if (array_pop(get_post_meta($post->ID, '_fpp_post_to_facebook')) != 'posted') {
+        if (!array_pop(get_post_meta($post->ID, '_fpp_is_published'))) {
                 ?>
                 <label for="fpp_post_to_facebook">Post to Facebook </label><input <?php if (ALWAYS_POST_TO_FACEBOOK) echo 'checked="checked"' ?> type="checkbox" value="1" id="fpp_post_to_facebook" name="fpp_post_to_facebook" />
                 <div><em>Can't be undone!</em></div>

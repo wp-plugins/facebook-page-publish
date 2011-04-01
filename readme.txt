@@ -70,6 +70,9 @@ Please use the forum.
 * Bugfix: Apostrophes (') no longer slashed (thanks to *dmeglio*!).
 * Update: SSL_VERIFY and ALWAYS_POST_TO_FACEBOOK constants for manual configuration.
 
+= 0.2.3 =
+* Bugfix: scheduled posts handled correctly now (thanks to *ksoszka*!).
+
 == Upgrade Notice ==
 
 = 0.2.1 =
