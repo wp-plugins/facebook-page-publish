@@ -25,7 +25,7 @@
  * Author URI:  http://www.tu-darmstadt.de/~m_t/
  */
 
-error_reporting(E_ALL);
+#error_reporting(E_ALL);
 define('VERSION', '3.0.0');
 define('BASE_DIR', dirname(__file__));
 define('BASE_URL', WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
