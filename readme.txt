@@ -1,24 +1,24 @@
 === Facebook Page Publish ===
 Contributors: mtschirs
-Tags: post, facebook, page, profile, publish
+Tags: post, Facebook, page, profile, publish
 Requires at least: 3.0
 Tested up to: 3.1
 Stable tag: trunk
 
-"Facebook Page Publish" publishes your blog posts to your facebook profile or page.
+"Facebook Page Publish" publishes your blog posts to your Facebook profile or page.
 
 == Description ==
 
 "Facebook Page Publish" publishes your blog posts to your profile or page! Posts appear on the wall of your choice as if you would share a link. The authors [gravatar](http://gravatar.com), a self-choosen or random post image, the title, author, categories and a short excerpt of your post can be shown.
 
-Decide yourself when and what post to publish to your page. Local and remote publishing based e.g. on the post category.
+Decide yourself when and what post to publish. Local and remote publishing based e.g. on the post category.
 
-Uses the modern facebook graph-API and integrates easily into your WordPress Blog.
+Uses the modern Facebook graph-API and integrates easily into your WordPress Blog.
 
 All you need do to is (see *Installation*):
 
-* Create a *facebook application*
-* Connect to your *facebook profile* OR *page*
+* Create a *Facebook application*
+* Connect to your *Facebook profile* OR *page*
 
 Technical features:
 
@@ -45,8 +45,8 @@ Please use the forum.
 == Screenshots ==
 
 1. The settings page.
-2. Check to publish your post to your page.
-3. An example post on facebook.
+2. Check to publish your post to Facebook.
+3. An example post on Facebook.
 
 == Changelog ==
 
@@ -54,7 +54,7 @@ Please use the forum.
 * First internal alpha release.
 
 = 0.2.0 =
-* Security: Only authors can publish to facebook.
+* Security: Only authors can publish to Facebook.
 * Bugfix: Only posts can be published (no pages etc.).
 * Bugfix: Character encoding for categories and title fixed.
 * Bugfix: Facebook link description length is 420 chars max.
