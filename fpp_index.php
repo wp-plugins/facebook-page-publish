@@ -19,7 +19,7 @@
  * 
  * Plugin Name: Facebook Page Publish
  * Plugin URI:  http://wordpress.org/extend/plugins/facebook-page-publish/
- * Description: Publishes your posts on the wall of a facebook profile or page.
+ * Description: Publishes your posts on the wall of a Facebook profile or page.
  * Author:      Martin Tschirsich
  * Version:     0.3.0
  * Author URI:  http://www.tu-darmstadt.de/~m_t/
@@ -150,7 +150,7 @@ function fpp_check_update() {
 	
 /**
  * Called on html head rendering. Prints meta tags to make posts appear
- * correctly in facebook. 
+ * correctly in Facebook. 
  */
 function fpp_head_action() {
         global $post;
@@ -162,10 +162,10 @@ function fpp_head_action() {
 
 /**
  * Called on any_to_future post state transition (scheduled post).
- * Marks any given post for publishing on facebook
+ * Marks any given post for publishing on Facebook
  * - if it was send directly from the admin panel and the 
  *   post-to-facebook checkbox was checked.
- * Marks any given post for NOT publishing on facebook
+ * Marks any given post for NOT publishing on Facebook
  * - if it was send directly from the admin panel and the
  *   post-to-facebook checkbox was NOT checked.
  *
@@ -189,13 +189,13 @@ function fpp_future_action($post_id) {
 
 /**
  * Called on any_to_publish post state transition (published post).
- * Publishes any given non password protected post to facebook
+ * Publishes any given non password protected post to Facebook
  * - if it was send directly from the admin panel and the 
  *   post-to-facebook checkbox was checked.
- * - if it was previously marked for publishing on facebook (scheduled).
+ * - if it was previously marked for publishing on Facebook (scheduled).
  * - if it was NOT send directly from the admin panel and the plugin
- *   is set to always post on facebook and the post is not already
- *   published (on wordpress or facebook).
+ *   is set to always post on Facebook and the post is not already
+ *   published (on wordpress or Facebook).
  *
  * @see fpp_render_post_button()
  */
@@ -213,7 +213,7 @@ function fpp_publish_action($post_id) {
                                         fpp_publish_to_facebook($post, $options['object_id'], get_option('fpp_object_access_token'));
                                         update_post_meta($post->ID, '_fpp_is_published', true);
                                 }
-                                else if (get_post_meta($post->ID, '_fpp_is_scheduled', true) == true) { // Scheduled post previously marked for facebook publishing by the user
+                                else if (get_post_meta($post->ID, '_fpp_is_scheduled', true) == true) { // Scheduled post previously marked for Facebook publishing by the user
                                         fpp_publish_to_facebook($post, $options['object_id'], get_option('fpp_object_access_token'));
                                         update_post_meta($post->ID, '_fpp_is_published', true);
                                         delete_post_meta($post->ID, '_fpp_is_scheduled');
@@ -225,7 +225,7 @@ function fpp_publish_action($post_id) {
                                         }
                                 }
                         } catch (CommunicationException $exception) {
-                                update_option('fpp_error', '<p>While publishing "'.$post->post_title.'" to facebook, an error occured: </p><p><strong>'.$exception->getMessage().'</strong></p>');
+                                update_option('fpp_error', '<p>While publishing "'.$post->post_title.'" to Facebook, an error occured: </p><p><strong>'.$exception->getMessage().'</strong></p>');
                         }
                 }
         }
@@ -270,7 +270,7 @@ function fpp_admin_init_action() {
 }
 
 /**
- * Called when the submitbox is rendered. Renders a publish to facebook
+ * Called when the submitbox is rendered. Renders a publish to Facebook
  * button if the current user is an author.
  *
  * @last_review 3.0.0
@@ -284,7 +284,7 @@ function fpp_post_submitbox_start_action() {
 }
 
 /**
- * Publishes the given post to a facebook page.
+ * Publishes the given post to a Facebook page.
  * 
  * @param post Wordpress post to publish
  * @param object_id Facebook page or wall ID
@@ -390,15 +390,15 @@ function fpp_verify_facebook_access_permissions($object_id, $object_type, $objec
 }
 
 /**
- * Classifies facebook object ids.
+ * Classifies Facebook object ids.
  *
- * @param object_ids Array of facebook object ids
- * @return map with a type string for each facebook object id
+ * @param object_ids Array of Facebook object ids
+ * @return map with a type string for each Facebook object id
  * 
  * @last_review 3.0.0
  */
 function fpp_classify_facebook_objects($object_ids) {
-        $numerical_object_ids = array_filter($object_ids, 'is_numeric'); // Alphabetical id's produce a facebook error.
+        $numerical_object_ids = array_filter($object_ids, 'is_numeric'); // Alphabetical id's produce a Facebook error.
         
         $request = new WP_Http;
         $api_url = 'https://api.facebook.com/method/fql.query?format=json&query='.urlencode('SELECT id, type FROM object_url WHERE id IN ('.implode(',', $numerical_object_ids).')'); 
@@ -432,15 +432,15 @@ function fpp_classify_facebook_objects($object_ids) {
 }
 
 /**
- * Checks whether a given facebook application id and its secret are
+ * Checks whether a given Facebook application id and its secret are
  * valid.
  *
  * @param app_id Application id to verify
  * @param app_secret Application secret
- * @param redirect_uri URL equal to the URL in the facebook app settings
+ * @param redirect_uri URL equal to the URL in the Facebook app settings
  * @return True if the given application id and secret are valid
  *
- * @last_review 3.0.0 //TODO: Validate error handling
+ * @last_review 3.0.0
  */
 function fpp_is_valid_facebook_application($app_id, $app_secret, $redirect_uri) {
         $request = new WP_Http;
@@ -460,7 +460,7 @@ function fpp_is_valid_facebook_application($app_id, $app_secret, $redirect_uri) 
                                 return true;
                               
                         if (strpos($object->error->message, 'Invalid redirect_uri') !== false)  
-                                throw new FacebookErrorException('The site URL in your facebook application settings does not match your wordpress blog URL. Please refer to the <a target="_blank" href="'.BASE_URL.'setup.htm#site_url">detailed setup instructions</a>.');
+                                throw new FacebookErrorException('The site URL in your Facebook application settings does not match your wordpress blog URL. Please refer to the <a target="_blank" href="'.BASE_URL.'setup.htm#site_url">detailed setup instructions</a>.');
                         
                         throw new FacebookUnexpectedErrorException($object->error->message);
                 }
@@ -518,7 +518,7 @@ function fpp_acquire_page_access_token($page_id, $profile_access_token) {
 
         $json_response = json_decode($response['body']);
         if (!is_object($json_response) || !property_exists($json_response, 'data'))
-                throw new FacebookUnexpectedErrorException('Can\'t access facebook user account information.');
+                throw new FacebookUnexpectedErrorException('Can\'t access Facebook user account information.');
 
         foreach ($json_response->data as $account) {
                 if ($account->id == $page_id) {
@@ -529,7 +529,7 @@ function fpp_acquire_page_access_token($page_id, $profile_access_token) {
                 }
         }
         if (!isset($page_access_token))
-                throw new FacebookUnexpectedErrorException('The facebook user account data contains no page with the given ID.');
+                throw new FacebookErrorException('Your Facebook user account data contains no page with the given ID. You have to be administrator of the given page.');
                 
         return $page_access_token;
 }
@@ -553,7 +553,7 @@ function fpp_admin_print_styles_action() {
 
 /**
  * Renders the options page. Uses the settings API (options validation, checking and storing by WP).
- * Also validates certain options (facebook access) that need redirecting.
+ * Also validates certain options (Facebook access) that need redirecting.
  */
 function fpp_render_options_page() {
         $options = get_option('fpp_options');
@@ -588,7 +588,7 @@ function fpp_render_options_page() {
                         if (!empty($object_access_token) and !fpp_verify_facebook_access_permissions($options['object_id'], $options['object_type'], $object_access_token, fpp_get_required_permissions($options['object_type']))) {
                                 update_option('fpp_object_access_token', '');
                                 update_option('fpp_profile_access_token', '');
-                                throw new CommunicationException('Some or all access permissions were revoked. Please click the button <em>Grant access rights!</em> and authorize the plugin to post to your facebook profile or page.');
+                                throw new CommunicationException('Some or all access permissions were revoked. Please click the button <em>Grant access rights!</em> and authorize the plugin to post to your Facebook profile or page.');
                         }
                 } catch (CommunicationException $exception) {
                         echo '<div class="error"><p><strong>'.$exception->getMessage().'</strong></p><p>Your page or profile\'s access permissions could not be verified.</p></div>';
@@ -602,7 +602,7 @@ function fpp_render_options_page() {
                 <form method="post" action="options.php">
                         <?php settings_fields('fpp_options_group'); ?>
                         <h3>Facebook Connection</h3>
-                        <p>Connect your blog to facebook. See <a target="_blank" href="<?php echo BASE_URL; ?>setup.htm">detailed setup instructions</a> for help.</p>
+                        <p>Connect your blog to Facebook. See <a target="_blank" href="<?php echo BASE_URL; ?>setup.htm">detailed setup instructions</a> for help.</p>
                         <table class="form-table">
                                 <tr valign="top">
                                         <th scope="row"><label for="fpp_options-app_id">Application ID</label></th>
@@ -654,10 +654,10 @@ function fpp_render_options_page() {
                                 </select><br />
                                 <label style="vertical-align:middle"><input name="fpp_options[default_publishing]" value="all" type="radio" <?php checked('1', $options['default_publishing'] == 'all'); ?> /> <span>all posts</label><br />
                                 <label style="vertical-align:middle"><input name="fpp_options[default_publishing]" value="none" type="radio" <?php checked('1', $options['default_publishing'] == 'none'); ?> /> <span>nothing</span></label><br />
-                        </fieldset>to facebook unless statet otherwise.
+                        </fieldset>to Facebook unless statet otherwise.
                         
                         <h3>Customization</h3>
-                        <p>Customize the appearance of your posts on facebook</p>
+                        <p>Customize the appearance of your posts on Facebook</p>
                         <div style="width:450px; padding:5px; background-color:#FFF">
                                 <div style="float:left; width:40px; height:40px; padding:5px; background-color:#EEE; font-size:7pt; line-height:9pt">Page or profile photo</div>
                                 <div style="margin-left:55px">
@@ -766,7 +766,7 @@ function fpp_get_post_image($post) {
 }
 
 /**
- * Render facebook recognized meta tags (Open Graph protocol).
+ * Render Facebook recognized meta tags (Open Graph protocol).
  * Facebooks uses them to refine shared links for example.
  *
  * @last_review 3.0.0
