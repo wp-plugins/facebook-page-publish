@@ -1,24 +1,24 @@
 === Facebook Page Publish ===
 Contributors: mtschirs
-Tags: posts, facebook, page, publish
+Tags: post, facebook, page, profile, publish
 Requires at least: 3.0
 Tested up to: 3.1
 Stable tag: trunk
 
-"Facebook Page Publish" publishes your blog posts to your fan page.
+"Facebook Page Publish" publishes your blog posts to your facebook profile or page.
 
 == Description ==
 
-"Facebook Page Publish" publishes your blog posts to your fan page! Posts appear on the wall of your fan page as if you would share a link. The authors [gravatar](http://gravatar.com) or a random post image, the title, categories and a short excerpt of your post are shown.
+"Facebook Page Publish" publishes your blog posts to your profile or page! Posts appear on the wall of your choice as if you would share a link. The authors [gravatar](http://gravatar.com), a self-choosen or random post image, the title, author, categories and a short excerpt of your post can be shown.
 
-Decide yourself when and what post to publish to your page.
+Decide yourself when and what post to publish to your page. Local and remote publishing based e.g. on the post category.
 
 Uses the modern facebook graph-API and integrates easily into your WordPress Blog.
 
-All you need is (see *Installation*):
+All you need do to is (see *Installation*):
 
-* A facebook application (application ID + secret)
-* A facebook fan page (page ID)
+* Create a *facebook application*
+* Connect to your *facebook profile* OR *page*
 
 Technical features:
 
@@ -70,8 +70,11 @@ Please use the forum.
 * Bugfix: Apostrophes (') no longer slashed (thanks to *dmeglio*!).
 * Update: SSL_VERIFY and ALWAYS_POST_TO_FACEBOOK constants for manual configuration.
 
-= 0.2.3 =
-* Bugfix: scheduled posts handled correctly now (thanks to *ksoszka*!).
+= 0.3.0 =
+* Update: Publishes to a page or profile
+* Update: More userfriendly error reporting
+* Update: New settings introduced: publishing policy (thanks to *Li-An*!) and appearance customization)
+* Major bugfixes: Scheduled and remote posts (thanks to *ksoszka*!), posting as password-protected, private or draft (thanks to *tbjers*!)
 
 == Upgrade Notice ==
 
@@ -80,3 +83,6 @@ Bugfixes, upgrade recommended.
 
 = 0.2.2 =
 Bugfixes, upgrade recommended.
+
+= 0.3.0 =
+Major update and bugfixes, upgrade strongly recommended.

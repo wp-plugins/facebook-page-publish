@@ -32,31 +32,41 @@
         a {
                 color: red;
         }
+        
+        .keyword {
+                color: gray;
+                font-weight: bold;
+        }
+        
+        a:target {
+                background-color: yellow;
+        }
         </style>
 </head>
 
 <body>
         <h1>Facebook Page Publish - Detailed Setup Instructions</h1>
-        <p><em>Facebook Page Publish</em> publishes your posts to a facebook page. To do so, it has to connect to facebook. This is done via a <em>facebook application</em>.</p>
+        <p><em>Facebook Page Publish</em> publishes your posts to a facebook profile or page. To do so, it has to connect to facebook. This is done via a facebook application.</p>
         <h2>Step 1</h2>
-        <p>You have to create your own <em>facebook application</em>: <a href="http://www.facebook.com/developers/createapp.php">Create application</a></p>
-        
+        <p>You have to <a href="http://www.facebook.com/developers/createapp.php">create your own facebook application</a>.</p>
+        <p>This may require an authentification of your facebook account via a valid mobile phone number or a credit card.</p>
         <h2>Step 2</h2>
-        <p>Go to <a href="http://www.facebook.com/developers/#!/developers/apps.php">your application</a>'s settings page and copy the <em>application ID</em> and the <em>secret</em> to the approptiate option fields of the plugin.
-        To authorize your blog to be able to use your application, you have to fill in the <em>URL</em> and optionally the <em>domain</em> of your blog:
-        <br />
-        <img src="setup-2.png" /></p>
+        <p>Go to <a href="http://www.facebook.com/developers/#!/developers/apps.php">your application</a>'s settings page and copy the <a class="keyword" name="app_id">application ID</a> and the <a class="keyword" name="app_secret">application secret</a> to the approptiate option fields of the plugin.</p>
+        <p><span id="site_url">To authorize your blog to be able to use your application, you have to fill in the <a class="keyword" name="site_url">URL</a> (without path) and optionally the domain of your blog.</p>
+        <img src="setup-2.png" />
         
         <h2>Step 3</h2>
-        <p>Go to your <em>facebook page</em> (or <a href="http://www.facebook.com/pages/create.php">create one</a>) where your blog post shall appear. Copy the <em>page ID</em> to the appropriate option field of the plugin:
-        <br />
-        <img src="setup-1.png" /></p>
+        <p>You have to decide where your posts shall appear on facebook: <a class="keyword" name="object_id">user profile or page</a>?</p>
+        <h3>Publish to a page's wall</h3>
+        <p>Go to your facebook page or <a href="http://www.facebook.com/pages/create.php">create a new one</a> where your blog posts shall appear. Copy the <a class="keyword" name="page_id">page ID</a> to the appropriate option field of the plugin.</p>
+        <img src="setup-1.png" />
+        <h3>Publish to a profile's wall</h3>
+        <p>Go to your facebook user profile where your blog posts shall appear. Copy the <a class="keyword" name="profile_id">profile ID</a> to the appropriate option field of the plugin.</p>
+        <img src="setup-4.png" />
         
         <h2>Done!</h2>
-        <p>Confirm the plugin settings and don't forget to authorize your blog to access your facebook page. To do so, simply click the authorize button on the plugin's settings page:
-        <br />
+        <p>Confirm the plugin settings and don't forget to grant your blog permission to access your facebook page. To do so, simply click the <a class="keyword" name="grant_permissions">grant permissions</a> button on the plugin's settings page.</p>
         <img src="setup-3.png" />
-        <br /><br />
-        Further questions? <a href="http://wordpress.org/extend/plugins/facebook-page-publish/faq/">Look here!</a></p>
+        <p>Further questions? <a href="http://wordpress.org/extend/plugins/facebook-page-publish/faq/">Refer to the FAQ / forum!</a></p>
 </body>
 </html>
