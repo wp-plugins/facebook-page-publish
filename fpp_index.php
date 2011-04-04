@@ -25,7 +25,7 @@
  * Author URI:  http://www.tu-darmstadt.de/~m_t/
  */
 
-#rror_reporting(E_ALL);
+#error_reporting(E_ALL);
 define('VERSION', '3.0.0');
 define('BASE_DIR', dirname(__file__));
 define('BASE_URL', WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
@@ -644,15 +644,15 @@ function fpp_render_options_page() {
                         Publish 
                         <fieldset style="display:inline; vertical-align:middle; line-height:20px">
                                 <label style="vertical-align:middle"><input name="fpp_options[default_publishing]" value="category" type="radio" <?php checked('1', $options['default_publishing'] == 'category'); ?> /> <span>posts from selected categories</span></label>
-                                <select name="fpp_options[default_publishing_categories][]" multiple="multiple" style="margin:0 5px; height:60px; width:200px; float:right" size="4">
+                                <div style="float:right; text-align:center"><select name="fpp_options[default_publishing_categories][]" multiple="multiple" style="margin:0 5px; height:60px; width:200px" size="4">
                                         <?php
                                         $categories = get_categories(array('hide_empty' => false, 'orderby' => 'name', 'order' => 'ASC'));
                                         foreach ($categories as $category) { 
-                                                echo '<option value="'.$category->cat_ID.'" '.((array_search($category->cat_ID, $options['default_publishing_categories']) !== false) ? 'selected="selected"' : '').'>'.$category->name.'</option>';
+                                                echo '<option style="height:8pt" value="'.$category->cat_ID.'" '.((array_search($category->cat_ID, $options['default_publishing_categories']) !== false) ? 'selected="selected"' : '').'>'.$category->name.'</option>';
                                         }
                                         ?>
-                                </select><br />
-                                <label style="vertical-align:middle"><input name="fpp_options[default_publishing]" value="all" type="radio" <?php checked('1', $options['default_publishing'] == 'all'); ?> /> <span>all posts</label><br />
+                                </select><br /><span style="color:#999; font-size:7pt; line-height:9pt">Hold [Ctrl] to select multiple categories</span></div><br />
+                                <label style="vertical-align:middle; clear:both"><input name="fpp_options[default_publishing]" value="all" type="radio" <?php checked('1', $options['default_publishing'] == 'all'); ?> /> <span>all posts</label><br />
                                 <label style="vertical-align:middle"><input name="fpp_options[default_publishing]" value="none" type="radio" <?php checked('1', $options['default_publishing'] == 'none'); ?> /> <span>nothing</span></label><br />
                         </fieldset>to Facebook unless statet otherwise.
                         
