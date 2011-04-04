@@ -25,7 +25,7 @@
  * Author URI:  http://www.tu-darmstadt.de/~m_t/
  */
 
-#error_reporting(E_ALL);
+#rror_reporting(E_ALL);
 define('VERSION', '3.0.0');
 define('BASE_DIR', dirname(__file__));
 define('BASE_URL', WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
@@ -40,7 +40,6 @@ add_action('admin_init', 'fpp_admin_init_action');
 add_action('admin_menu', 'fpp_admin_menu_action');
 add_action('wp_head', 'fpp_head_action');
 add_action('post_submitbox_start', 'fpp_post_submitbox_start_action');
-register_activation_hook(__FILE__, 'fpp_activation_hook');
 
 class CommunicationException extends Exception {}
 
@@ -85,41 +84,53 @@ class FacebookUnexpectedDataException extends CommunicationException {
 }
 
 /**
- * Called on plugin activation. Initializes plugin options on first run.
+ * @return v1 < v2
  */
-function fpp_activation_hook() {
-        $options = array('app_id' => '',
-                          'app_id_valid' => false,
-                          'app_secret' => '',
-                          'app_secret_valid' => false,
-                          'object_id' => '',
-                          'object_id_valid' => false,
-                          'object_type' => '',
-                          'ignore_ssl' => false,
-                          'default_publishing' => 'all',
-                          'default_publishing_categories' => array(),
-                          'default_thumbnail_url' => BASE_URL.'line.png',
-                          'show_post_categories' => true,
-                          'show_post_author' => true,
-                          'show_thumbnail' => 'gravatar');
-                   
-        $previous_options = get_option('fpp_options');
-        if (!is_array($previous_options)) { // No plugin version installed
-                update_option('fpp_options', $options);
-                update_option('fpp_object_access_token', '');
-                update_option('fpp_profile_access_token', '');
-                update_option('fpp_error', '');
-        } else { // Some probably older version installed
-                $version = get_option('fpp_installed_version');
-                if (empty($version)) { // version <= 0.2.2
-                        $options['app_id'] = $previous_options['app_id'];
-                        $options['app_id_valid'] = !empty($previous_options['page_id']);
-                        $options['app_secret'] = $previous_options['app_secret'];
-                        $options['app_secret_valid'] = !empty($previous_options['page_id']);
-                        $options['object_id'] = $previous_options['page_id'];
-                        $options['object_id_valid'] = !empty($previous_options['page_id']);
+function fpp_is_older_version($v1, $v2) {
+        $v1_array = explode('.', $v1);
+        $v2_array = explode('.', $v2);
+        return ($v1_array[0] < $v2_array[0]) or 
+                        (($v1_array[0] == $v2_array[0]) and 
+                        (($v1_array[1] < $v2_array[1]) or 
+                                (($v1_array[1] == $v2_array[1]) and 
+                                ($v1_array[2] < $v2_array[2]))));
+}
+
+function fpp_check_update() {
+        $version = get_option('fpp_installed_version');
+        if ($version != VERSION) { // Only do something if plugin version != option version
+                // default options:
+                $options = array(
+                        'app_id' => '',
+                        'app_id_valid' => false,
+                        'app_secret' => '',
+                        'app_secret_valid' => false,
+                        'object_id' => '',
+                        'object_id_valid' => false,
+                        'object_type' => '',
+                        'ignore_ssl' => false,
+                        'default_publishing' => 'all',
+                        'default_publishing_categories' => array(),
+                        'default_thumbnail_url' => BASE_URL.'line.png',
+                        'show_post_categories' => true,
+                        'show_post_author' => true,
+                        'show_thumbnail' => 'gravatar');
+                
+                $current_options = get_option('fpp_options');
+                if (!is_array($current_options)) { // No plugin version installed
+                        update_option('fpp_options', $options);
+                        update_option('fpp_object_access_token', '');
+                        update_option('fpp_profile_access_token', '');
+                        update_option('fpp_error', '');
+                } else if (empty($version)) { // version <= 0.2.2
+                        $options['app_id'] = $current_options['app_id'];
+                        $options['app_id_valid'] = !empty($current_options['page_id']);
+                        $options['app_secret'] = $current_options['app_secret'];
+                        $options['app_secret_valid'] = !empty($current_options['page_id']);
+                        $options['object_id'] = $current_options['page_id'];
+                        $options['object_id_valid'] = !empty($current_options['page_id']);
                         $options['object_type'] = 'page';
-                        $options['show_thumbnail'] = $previous_options['show_gravatar'] ? 'gravatar' : 'post';
+                        $options['show_thumbnail'] = $current_options['show_gravatar'] ? 'gravatar' : 'post';
                         
                         update_option('fpp_options', $options);
                         update_option('fpp_object_access_token', get_option('fpp_page_access_token'));
@@ -127,14 +138,16 @@ function fpp_activation_hook() {
                         
                         delete_option('fpp_page_access_token');
                         delete_option('fpp_post_to_facebook');
+                } else if (fpp_is_older_version($version, VERSION)) { // currently none
+                        update_option('fpp_options', $options);
+                        update_option('fpp_object_access_token', '');
+                        update_option('fpp_profile_access_token', '');
+                        update_option('fpp_error', '');
                 }
-                else { // version 0.3.0
-                        // options should already be set up correctly
-                }
+                update_option('fpp_installed_version', VERSION);
         }
-        update_option('fpp_installed_version', VERSION);
 }
-
+	
 /**
  * Called on html head rendering. Prints meta tags to make posts appear
  * correctly in facebook. 
@@ -253,6 +266,7 @@ function fpp_admin_menu_action() {
  */
 function fpp_admin_init_action() {
         register_setting('fpp_options_group', 'fpp_options', 'fpp_validate_options');
+        fpp_check_update();
 }
 
 /**
@@ -802,7 +816,7 @@ function fpp_render_post_button() {
         } else {
                 echo '<label for="fpp_post_to_facebook"><img style="vertical-align:middle; margin:2px" src="'.BASE_URL.'publish_icon.png" /> Post <em>again</em> to Facebook </label><input type="checkbox" value="1" id="fpp_post_to_facebook" name="fpp_post_to_facebook" '.(empty($object_access_token) ? 'disabled="disabled"' : '').' />';
         }
-        if (empty($object_access_token)) echo '<div><em style="color:#aa6600">Facebook Page Publish is not set up correctly!</em></div>';
+        if (empty($object_access_token)) echo '<div><em style="color:#aa6600">Facebook Page Publish is not set up.</em></div>';
         if ($post->post_status == "private")
                 echo '<div><em style="color:#aa6600">Private posts are not published</em></div>';
         echo '<input type="hidden" name="fpp_send_from_admin" value="1" />';

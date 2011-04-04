@@ -73,7 +73,7 @@ Please use the forum.
 = 0.3.0 =
 * Update: Publishes to a page or profile
 * Update: More userfriendly error reporting
-* Update: New settings introduced: publishing policy (thanks to *Li-An*!) and appearance customization)
+* Update: New settings introduced: publishing policy (thanks to *Li-An*!) and appearance customization.
 * Major bugfixes: Scheduled and remote posts (thanks to *ksoszka*!), posting as password-protected, private or draft (thanks to *tbjers*!)
 
 == Upgrade Notice ==
