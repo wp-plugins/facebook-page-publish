@@ -21,34 +21,33 @@
  * Plugin URI:  http://wordpress.org/extend/plugins/facebook-page-publish/
  * Description: Publishes your posts on the wall of a Facebook profile or page.
  * Author:      Martin Tschirsich
- * Version:     0.3.0
+ * Version:     0.3.1
  * Author URI:  http://www.tu-darmstadt.de/~m_t/
  */
 
+/**********************************************************************
+ * Constants
+ **********************************************************************/
 #error_reporting(E_ALL);
-define('VERSION', '3.0.0');
+define('VERSION', '0.3.1');
 define('BASE_DIR', dirname(__file__));
 define('BASE_URL', WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
 define('ADMIN_URL', admin_url('admin.php?page='.urlencode(plugin_basename(__FILE__))));
 define('DEFAULT_POST_TO_FACEBOOK', false); // Checkbox admin panel always preselected
-define('FACEBOOK_LINK_DESCRIPTION_MAX_LENGTH', 420); // Facebook link description allows max. 420 characters
+define('FACEBOOK_LINK_DESCRIPTION_MAX_LENGTH', 340); // Facebook link description allows max. 420 characters, 340 are always shown
+define('REQUEST_TIMEOUT', 20); // The default 5s are not sufficient on some servers
 
-add_action('future_post', 'fpp_future_action');
-add_action('publish_post', 'fpp_publish_action');
-
-add_action('admin_init', 'fpp_admin_init_action');
-add_action('admin_menu', 'fpp_admin_menu_action');
-add_action('wp_head', 'fpp_head_action');
-add_action('post_submitbox_start', 'fpp_post_submitbox_start_action');
-
+/**********************************************************************
+ * Exceptions
+ **********************************************************************/
 class CommunicationException extends Exception {}
 
 class FacebookUnreachableException extends CommunicationException {
         public function __construct($message = null, $code = 0) {
                 if (empty($message)) {
-                        $message = 'Facebook is not reachable from your server. <a target="_blank" href="'.BASE_URL.'diagnosis.htm">Check your connection!</a>';
+                        $message = 'Facebook is not reachable from your server. <a target="_blank" href="'.BASE_URL.'diagnosis.php">Check your connection!</a>';
                 } else {
-                        $message = 'Facebook is not reachable from your server: '.$message.'<br /><a target="_blank" href="'.BASE_URL.'diagnosis.htm">Check your connection!</a>';
+                        $message = 'Facebook is not reachable from your server: '.$message.'<br /><a target="_blank" href="'.BASE_URL.'diagnosis.php">Check your connection!</a>';
                 }
                 parent::__construct($message, $code);
         }
@@ -83,71 +82,17 @@ class FacebookUnexpectedDataException extends CommunicationException {
         }
 }
 
-/**
- * @return v1 < v2
- */
-function fpp_is_older_version($v1, $v2) {
-        $v1_array = explode('.', $v1);
-        $v2_array = explode('.', $v2);
-        return ($v1_array[0] < $v2_array[0]) or 
-                        (($v1_array[0] == $v2_array[0]) and 
-                        (($v1_array[1] < $v2_array[1]) or 
-                                (($v1_array[1] == $v2_array[1]) and 
-                                ($v1_array[2] < $v2_array[2]))));
-}
+/**********************************************************************
+ * Action handler
+ **********************************************************************/
+add_action('future_post', 'fpp_future_action');
+add_action('publish_post', 'fpp_publish_action');
 
-function fpp_check_update() {
-        $version = get_option('fpp_installed_version');
-        if ($version != VERSION) { // Only do something if plugin version != option version
-                // default options:
-                $options = array(
-                        'app_id' => '',
-                        'app_id_valid' => false,
-                        'app_secret' => '',
-                        'app_secret_valid' => false,
-                        'object_id' => '',
-                        'object_id_valid' => false,
-                        'object_type' => '',
-                        'ignore_ssl' => false,
-                        'default_publishing' => 'all',
-                        'default_publishing_categories' => array(),
-                        'default_thumbnail_url' => BASE_URL.'line.png',
-                        'show_post_categories' => true,
-                        'show_post_author' => true,
-                        'show_thumbnail' => 'gravatar');
-                
-                $current_options = get_option('fpp_options');
-                if (!is_array($current_options)) { // No plugin version installed
-                        update_option('fpp_options', $options);
-                        update_option('fpp_object_access_token', '');
-                        update_option('fpp_profile_access_token', '');
-                        update_option('fpp_error', '');
-                } else if (empty($version)) { // version <= 0.2.2
-                        $options['app_id'] = $current_options['app_id'];
-                        $options['app_id_valid'] = !empty($current_options['page_id']);
-                        $options['app_secret'] = $current_options['app_secret'];
-                        $options['app_secret_valid'] = !empty($current_options['page_id']);
-                        $options['object_id'] = $current_options['page_id'];
-                        $options['object_id_valid'] = !empty($current_options['page_id']);
-                        $options['object_type'] = 'page';
-                        $options['show_thumbnail'] = $current_options['show_gravatar'] ? 'gravatar' : 'post';
-                        
-                        update_option('fpp_options', $options);
-                        update_option('fpp_object_access_token', get_option('fpp_page_access_token'));
-                        update_option('fpp_profile_access_token', '');
-                        
-                        delete_option('fpp_page_access_token');
-                        delete_option('fpp_post_to_facebook');
-                } else if (fpp_is_older_version($version, VERSION)) { // currently none
-                        update_option('fpp_options', $options);
-                        update_option('fpp_object_access_token', '');
-                        update_option('fpp_profile_access_token', '');
-                        update_option('fpp_error', '');
-                }
-                update_option('fpp_installed_version', VERSION);
-        }
-}
-	
+add_action('admin_init', 'fpp_admin_init_action');
+add_action('admin_menu', 'fpp_admin_menu_action');
+add_action('wp_head', 'fpp_head_action');
+add_action('post_submitbox_start', 'fpp_post_submitbox_start_action');
+
 /**
  * Called on html head rendering. Prints meta tags to make posts appear
  * correctly in Facebook. 
@@ -155,8 +100,73 @@ function fpp_check_update() {
 function fpp_head_action() {
         global $post;
 
-        if (is_object($post) && empty($post->post_password) && ($post->post_type == 'post') && is_single()) {
+        if (is_object($post) && ($post->post_type == 'post') && is_single()) {
                 fpp_render_meta_tags($post);
+        }
+}
+
+/**
+ * Called on admin menu rendering, adds an options page and its
+ * rendering callback.
+ *
+ * @see fpp_render_options_page()
+ */
+function fpp_admin_menu_action() {
+        $page = add_options_page('Facebook Page Publish Options', 'Facebook Page Publish', 'manage_options', __FILE__, 'fpp_render_options_page');
+        
+        add_action('admin_print_scripts-'.$page, 'fpp_admin_print_scripts_action');
+        add_action('admin_print_styles-'.$page, 'fpp_admin_print_styles_action');
+}
+
+/**
+ * Called when a user accesses the admin area. Registers settings and a
+ * sanitization callback. Initializes the plugin options when a version
+ * update has been detected.
+ *
+ * @see fpp_validate_options
+ */
+function fpp_admin_init_action() {
+        register_setting('fpp_options_group', 'fpp_options', 'fpp_validate_options');
+        
+        $version = get_option('fpp_installed_version');
+        if ($version != VERSION) {
+                fpp_initialize_options();
+        }
+}
+
+
+/**
+ * Loads media gallery scripts.
+ *
+ * @last_review 0.3.0
+ */
+function fpp_admin_print_scripts_action() {
+        wp_enqueue_script('media-upload');
+        wp_enqueue_script('thickbox');
+        wp_register_script('fpp-upload', BASE_URL.'fpp_script.js', array('jquery','media-upload','thickbox'));
+        wp_enqueue_script('fpp-upload');
+}
+
+/**
+ * Loads media gallery styles.
+ *
+ * @last_review 0.3.0
+ */
+function fpp_admin_print_styles_action() {
+        wp_enqueue_style('thickbox');
+}
+
+/**
+ * Called when the submitbox is rendered. Renders a publish to Facebook
+ * button if the current user has the 'publish_posts' permission.
+ *
+ * @last_review 0.3.0
+ */
+function fpp_post_submitbox_start_action() {
+        global $post;
+
+        if (is_object($post) and ($post->post_type == 'post') and current_user_can('publish_posts')) {
+                fpp_render_post_button();
         }
 }
 
@@ -169,7 +179,7 @@ function fpp_head_action() {
  * - if it was send directly from the admin panel and the
  *   post-to-facebook checkbox was NOT checked.
  *
- * @last_review 3.0.0
+ * @last_review 0.3.0
  */
 function fpp_future_action($post_id) {
         $send_from_admin = isset($_REQUEST['fpp_send_from_admin']);
@@ -231,58 +241,9 @@ function fpp_publish_action($post_id) {
         }
 }
 
-function fpp_get_default_publishing($post) {
-        $options = get_option('fpp_options');
-        
-        if ($options['default_publishing'] == 'all') return true;
-        if ($options['default_publishing'] == 'category') {
-                $categories = get_the_category($post->ID);
-                foreach ($categories as $category) {
-                        if (array_search($category->cat_ID, $options['default_publishing_categories']) !== false)
-                                return true;
-                }
-        }
-        return false;
-}
-
-/**
- * Called on admin menu rendering, adds an options page and its
- * rendering callback.
- *
- * @see fpp_render_options_page()
- */
-function fpp_admin_menu_action() {
-        $page = add_options_page('Facebook Page Publish Options', 'Facebook Page Publish', 'manage_options', __FILE__, 'fpp_render_options_page');
-        
-        add_action('admin_print_scripts-'.$page, 'fpp_admin_print_scripts_action');
-        add_action('admin_print_styles-'.$page, 'fpp_admin_print_styles_action');
-}
-
-/**
- * Called when a user accesses the admin area. Registers settings and a
- * sanitization callback.
- *
- * @see fpp_validate_optios
- */
-function fpp_admin_init_action() {
-        register_setting('fpp_options_group', 'fpp_options', 'fpp_validate_options');
-        fpp_check_update();
-}
-
-/**
- * Called when the submitbox is rendered. Renders a publish to Facebook
- * button if the current user is an author.
- *
- * @last_review 3.0.0
- */
-function fpp_post_submitbox_start_action() {
-        global $post;
-
-        if (is_object($post) && ($post->post_type == 'post') && current_user_can('publish_posts')) {
-                fpp_render_post_button();
-        }
-}
-
+/**********************************************************************
+ * Facebook functions
+ **********************************************************************/
 /**
  * Publishes the given post to a Facebook page.
  * 
@@ -291,15 +252,32 @@ function fpp_post_submitbox_start_action() {
  * @param object_type Either 'profile' or 'page'
  * @param object_acces_token Access token for the given object
  *
- * @last_review 3.0.0
+ * @last_review 0.3.1
  */
 function fpp_publish_to_facebook($post, $object_id, $object_acces_token) {
-        if (empty($post->post_password)) {
-                $message = stripslashes(html_entity_decode(wp_filter_nohtml_kses(strip_shortcodes(empty($post->post_excerpt) ? $post->post_content : $post->post_excerpt)), ENT_QUOTES, 'UTF-8'));
+        $options = get_option('fpp_options');
+        
+        if (empty($post->post_password) and $options['show_post_text']) {
+                $message = do_shortcode(empty($post->post_excerpt) ? $post->post_content : $post->post_excerpt);
 
+                if ($options['show_post_link']) {
+                        $message = wp_kses($message, array('a' => array('href' => array())));
+                        $message = preg_replace('/<a[^>]*?href=["|\']([^"|\']+).[^>]*?>(.*?)<\/a>/i', '${2} ${1}', $message);
+                        $message = trim(stripslashes(html_entity_decode($message, ENT_QUOTES, 'UTF-8')));
+                }
+                else {
+                        $message = trim(stripslashes(html_entity_decode(wp_filter_nohtml_kses($message), ENT_QUOTES, 'UTF-8')));
+                }
+                
+                // Remove empty lines:
+                $message = preg_replace("/\n\s*\n(\n|\s)*/s", "\n",$message);
+                
                 if (strpos($message, '<!--more-->') !== false) {
                         $message = substr($message, 0, strpos($message, '<!--more-->'));
                 }
+                
+                // Remove HTML Comments:
+                $message = preg_replace('/<!--(.*)-->/Uis', '', $message);
                 
                 if (strlen($message) >= FACEBOOK_LINK_DESCRIPTION_MAX_LENGTH) {
                         $last_space_pos = strrpos(substr($message, 0, FACEBOOK_LINK_DESCRIPTION_MAX_LENGTH - 3), ' ');
@@ -309,11 +287,13 @@ function fpp_publish_to_facebook($post, $object_id, $object_acces_token) {
                 $message = ''; // Password protected, no content displayed.
         }
         
+       // echo $message; 
+        
         // Publish:
         $request = new WP_Http;
         $api_url = 'https://graph.facebook.com/'.urlencode($object_id).'/links';
         $body = array('message' => $message, 'link' => get_permalink($post->ID), 'access_token' => $object_acces_token);
-        $response = $request->request($api_url, array('method' => 'POST', 'body' => $body, 'sslverify' => fpp_get_ssl_verify()));
+        $response = $request->request($api_url, array('method' => 'POST', 'body' => $body, 'timeout' => REQUEST_TIMEOUT, 'sslverify' => fpp_get_ssl_verify()));
 
         // Error detection:
         if (array_key_exists('errors', $response))
@@ -323,11 +303,6 @@ function fpp_publish_to_facebook($post, $object_id, $object_acces_token) {
         if (is_object($json_response) and property_exists($json_response, 'error')) {
                 throw new FacebookUnexpectedErrorException((is_object($json_response->error) and property_exists($json_response->error, 'message')) ? $json_response->error->message : '');
         }
-}
-
-function fpp_get_ssl_verify() {
-        $options = get_option('fpp_options');
-        return !$options['ignore_ssl'];
 }
 
 /**
@@ -340,53 +315,48 @@ function fpp_get_ssl_verify() {
  * @param permissions Array of permission strings to validate
  * @return True if access_token valid and all permissions granted
  *
- * @last_review 3.0.0
+ * @last_review 0.3.1
  */
-function fpp_verify_facebook_access_permissions($object_id, $object_type, $object_access_token, $permissions) {
-        if ($object_type == 'page') { // Workaround for missig FQL querying capabilities
-                $request = new WP_Http;
-                $api_url = 'https://graph.facebook.com/'.urlencode($object_id).'/links';
-                $body = array('message' => 'dummy message', 'link' => 'invalid url', 'access_token' => $object_access_token);
-                $response = $request->request($api_url, array('method' => 'POST', 'body' => $body, 'sslverify' => fpp_get_ssl_verify()));
+function fpp_verify_profile_access_permissions($profile_access_token, $permissions) {
+        $request = new WP_Http;
+        $api_url =  'https://api.facebook.com/method/fql.query?access_token='.urlencode($profile_access_token).'&format=json&query='.urlencode('SELECT '.implode(',', $permissions).' FROM permissions WHERE uid = me()'); 
+        $response = $request->get($api_url, array('timeout' => REQUEST_TIMEOUT, 'sslverify' => fpp_get_ssl_verify()));
 
-                if (array_key_exists('errors', $response))
-                        throw new FacebookUnreachableException(!empty($response->errors) ? array_pop(array_pop($response->errors)) : '');
-                
-                $json_response = json_decode($response['body']);
-                if (is_object($json_response) and property_exists($json_response, 'error') and is_object($json_response->error) and property_exists($json_response->error, 'message')) {
-                        return (strpos($json_response->error->message, '#1500') !== false);
-                }
-                return false;
-        } else {
-                $request = new WP_Http;
-                $api_url =  'https://api.facebook.com/method/fql.query?access_token='.urlencode($object_access_token).'&format=json&query='.urlencode('SELECT '.implode(',', $permissions).' FROM permissions WHERE uid = '.urlencode($object_id)); 
-                $response = $request->get($api_url, array('sslverify' => fpp_get_ssl_verify()));
+        if (array_key_exists('errors', $response))
+                throw new FacebookUnreachableException((!empty($response->errors) ? array_pop(array_pop($response->errors)) : ''));
 
-                if (array_key_exists('errors', $response))
-                        throw new FacebookUnreachableException((!empty($response->errors) ? array_pop(array_pop($response->errors)) : ''));
-
-                $json_response = json_decode($response['body']);
-                if (is_object($json_response) and property_exists($json_response, 'error_msg')) {
-                        if (property_exists($json_response, 'error_code') and ($json_response->error_code == 190)) // Access token expired or invalid
-                                return false;
-                        if (property_exists($json_response, 'error_code') and ($json_response->error_code == 104)) // 'Requires valid signature'-error
-                                return false;
-                        throw new FacebookUnexpectedErrorException($json_response->error_msg);
-                }
-                if (!is_array($json_response)) {
-                        throw new FacebookUnexpectedDataException();
-                }
-                $json_response = array_pop($json_response);
-                if (!is_object($json_response)) {
-                        throw new FacebookUnexpectedDataException();
-                }
-                
-                foreach ($permissions as $permission) {
-                        if (!property_exists($json_response, $permission) or empty($json_response->$permission)) return false;
-                }
-                return true;
+        $json_response = json_decode($response['body']);
+        if (is_object($json_response) and property_exists($json_response, 'error_msg')) {
+                if (property_exists($json_response, 'error_code') and ($json_response->error_code == 190)) // Access token expired or invalid
+                        return false;
+                if (property_exists($json_response, 'error_code') and ($json_response->error_code == 104)) // 'Requires valid signature'-error
+                        return false;
+                throw new FacebookUnexpectedErrorException($json_response->error_msg);
         }
-        throw new Exception('Unsupported object type');
+        if (!is_array($json_response)) {
+                throw new FacebookUnexpectedDataException();
+        }
+        $json_response = array_pop($json_response);
+        if (!is_object($json_response)) {
+                throw new FacebookUnexpectedDataException();
+        }
+        
+        foreach ($permissions as $permission) {
+                if (!property_exists($json_response, $permission) or empty($json_response->$permission)) return false;
+        }
+        return true;
+}
+
+function fpp_verify_page_access_token($page_id, $page_access_token) {
+        $request = new WP_Http;
+        $api_url = 'https://graph.facebook.com/'.urlencode($page_id).'/links';
+        $body = array('message' => 'dummy message', 'link' => 'invalid url', 'access_token' => $page_access_token);
+        $response = $request->request($api_url, array('method' => 'POST', 'body' => $body, 'timeout' => REQUEST_TIMEOUT, 'sslverify' => fpp_get_ssl_verify()));
+
+        if (array_key_exists('errors', $response))
+                throw new FacebookUnreachableException(!empty($response->errors) ? array_pop(array_pop($response->errors)) : '');
+
+        return ($response['response']['code'] == 400); // If everything is ok, we should receive a BAD_REQUEST / 400 response, otherwise FORBIDDEN / 403:
 }
 
 /**
@@ -395,14 +365,14 @@ function fpp_verify_facebook_access_permissions($object_id, $object_type, $objec
  * @param object_ids Array of Facebook object ids
  * @return map with a type string for each Facebook object id
  * 
- * @last_review 3.0.0
+ * @last_review 0.3.0
  */
 function fpp_classify_facebook_objects($object_ids) {
         $numerical_object_ids = array_filter($object_ids, 'is_numeric'); // Alphabetical id's produce a Facebook error.
         
         $request = new WP_Http;
         $api_url = 'https://api.facebook.com/method/fql.query?format=json&query='.urlencode('SELECT id, type FROM object_url WHERE id IN ('.implode(',', $numerical_object_ids).')'); 
-        $response = $request->get($api_url, array('sslverify' => fpp_get_ssl_verify()));
+        $response = $request->get($api_url, array('timeout' => REQUEST_TIMEOUT, 'sslverify' => fpp_get_ssl_verify()));
 
         if (array_key_exists('errors', $response))
                 throw new FacebookUnreachableException(!empty($response->errors) ? array_pop(array_pop($response->errors)) : '');
@@ -440,12 +410,12 @@ function fpp_classify_facebook_objects($object_ids) {
  * @param redirect_uri URL equal to the URL in the Facebook app settings
  * @return True if the given application id and secret are valid
  *
- * @last_review 3.0.0
+ * @last_review 0.3.0
  */
 function fpp_is_valid_facebook_application($app_id, $app_secret, $redirect_uri) {
         $request = new WP_Http;
         $api_url = 'https://graph.facebook.com/oauth/access_token?client_id='.urlencode($app_id).'&client_secret='.urlencode($app_secret).'&redirect_uri='.urlencode($redirect_uri);
-        $response = $request->get($api_url, array('sslverify' => fpp_get_ssl_verify()));
+        $response = $request->get($api_url, array('timeout' => REQUEST_TIMEOUT, 'sslverify' => fpp_get_ssl_verify()));
 
         if (array_key_exists('errors', $response))
                 throw new FacebookUnreachableException(!empty($response->errors) ? array_pop(array_pop($response->errors)) : '');
@@ -480,25 +450,22 @@ function fpp_is_valid_facebook_application($app_id, $app_secret, $redirect_uri) 
  * @param redirect_uri URL used to get the transaction code
  * @param code Transaction code (refer to the OAuth protocoll docs)
  *
- * @last_rewiev 3.0.0
+ * @last_rewiev 0.3.1
  */
 function fpp_acquire_profile_access_token($app_id, $app_secret, $redirect_uri, $code) {
         $request = new WP_Http;
         $api_url = 'https://graph.facebook.com/oauth/access_token?client_id='.urlencode($app_id).'&redirect_uri='.urlencode($redirect_uri).'&client_secret='.urlencode($app_secret).'&code='.urlencode($code);
-        $response = $request->get($api_url, array('sslverify' => fpp_get_ssl_verify()));
+        $response = $request->get($api_url, array('timeout' => REQUEST_TIMEOUT, 'sslverify' => fpp_get_ssl_verify()));
 
         if (array_key_exists('errors', $response))
                 throw new FacebookUnreachableException(!empty($response->errors) ? array_pop(array_pop($response->errors)) : '');
 
         $json_response = json_decode($response['body']);
-        if ($json_response != null) {
-                if (is_object($json_response) and property_exists($json_response, 'error') and property_exists($json_response->error, 'message')) {
-                        if (strpos($json_response->error->message, 'Code was invalid or expired') !== false) {
-                                throw new FacebookErrorException('Your authorization code was invalid or expired. Please try again. If the problem persists update the plugin or <a target="_blank" href="http://wordpress.org/tags/facebook-page-publish">inform the author</a>.');
-                        }
-                        else throw new FacebookUnexpectedErrorException($json_response->error->message);
+        if (is_object($json_response) and property_exists($json_response, 'error') and property_exists($json_response->error, 'message')) {
+                if (is_string($json_response->error->message) and (strpos($json_response->error->message, 'Code was invalid or expired') !== false)) {
+                        throw new FacebookErrorException('Your authorization code was invalid or expired. Please try again. If the problem persists update the plugin or <a target="_blank" href="http://wordpress.org/tags/facebook-page-publish">inform the author</a>.');
                 }
-                else throw new FacebookUnexpectedErrorException();
+                else throw new FacebookUnexpectedErrorException($json_response->error->message);
         }
         $access_token_url = $response['body'];
 
@@ -511,7 +478,7 @@ function fpp_acquire_profile_access_token($app_id, $app_secret, $redirect_uri, $
 function fpp_acquire_page_access_token($page_id, $profile_access_token) {
         $request = new WP_Http;
         $api_url = 'https://graph.facebook.com/me/accounts?access_token='.urlencode($profile_access_token);
-        $response = $request->get($api_url, array('sslverify' => fpp_get_ssl_verify()));
+        $response = $request->get($api_url, array('timeout' => REQUEST_TIMEOUT, 'sslverify' => fpp_get_ssl_verify()));
 
         if (array_key_exists('errors', $response))
                 throw new FacebookUnreachableException(!empty($response->errors) ? array_pop(array_pop($response->errors)): '');
@@ -533,188 +500,44 @@ function fpp_acquire_page_access_token($page_id, $profile_access_token) {
                 
         return $page_access_token;
 }
-
+		
+/**********************************************************************
+ * Getter
+ **********************************************************************/
 /**
- * @last_review 3.0.0
+ * Determines whether a post should be pulished by default or not, 
+ * depending on the plugin options and the post category.
  */
-function fpp_admin_print_scripts_action() {
-        wp_enqueue_script('media-upload');
-        wp_enqueue_script('thickbox');
-        wp_register_script('fpp-upload', BASE_URL.'fpp_script.js', array('jquery','media-upload','thickbox'));
-        wp_enqueue_script('fpp-upload');
-}
-
-/**
- * @last_review 3.0.0
- */
-function fpp_admin_print_styles_action() {
-        wp_enqueue_style('thickbox');
-}
-
-/**
- * Renders the options page. Uses the settings API (options validation, checking and storing by WP).
- * Also validates certain options (Facebook access) that need redirecting.
- */
-function fpp_render_options_page() {
+function fpp_get_default_publishing($post) {
         $options = get_option('fpp_options');
-
-        $error = get_option('fpp_error');
-        if (!empty($error)) {
-              echo '<div class="error">'.$error.'</div>';  
-              update_option('fpp_error', '');
-        }
         
-        if ($options['app_id_valid'] && $options['app_secret_valid'] && $options['object_id_valid']) {
-                // User clicked the authorize button:
-                if (array_key_exists('code', $_GET)) {
-                        try {
-                                $profile_access_token = fpp_acquire_profile_access_token($options['app_id'], $options['app_secret'], ADMIN_URL, $_GET['code']);
-                                
-                                if ($options['object_type'] == 'page') {
-                                        $page_access_token = fpp_acquire_page_access_token($options['object_id'], $profile_access_token);
-                                        update_option('fpp_object_access_token', $page_access_token);
-                                }
-                                else update_option('fpp_object_access_token', $profile_access_token);
-                                update_option('fpp_profile_access_token', $profile_access_token);
-                              
-                        } catch (CommunicationException $exception) {
-                                echo '<div class="error"><p><strong>'.$exception->getMessage().'</strong></p><p>Your page or profile\'s access permissions could not be granted.</p></div>';
-                        }
-                }
-        
-                // Check if all necessary permissions are granted:
-                try {
-                        $object_access_token = get_option('fpp_object_access_token');
-                        if (!empty($object_access_token) and !fpp_verify_facebook_access_permissions($options['object_id'], $options['object_type'], $object_access_token, fpp_get_required_permissions($options['object_type']))) {
-                                update_option('fpp_object_access_token', '');
-                                update_option('fpp_profile_access_token', '');
-                                throw new CommunicationException('Some or all access permissions were revoked. Please click the button <em>Grant access rights!</em> and authorize the plugin to post to your Facebook profile or page.');
-                        }
-                } catch (CommunicationException $exception) {
-                        echo '<div class="error"><p><strong>'.$exception->getMessage().'</strong></p><p>Your page or profile\'s access permissions could not be verified.</p></div>';
+        if ($options['default_publishing'] == 'all') return true;
+        if ($options['default_publishing'] == 'category') {
+                $categories = get_the_category($post->ID);
+                foreach ($categories as $category) {
+                        if (array_search($category->cat_ID, $options['default_publishing_categories']) !== false)
+                                return true;
                 }
         }
-        ?>
-        <div class="wrap">
-                <div class="icon32" id="icon-options-general"><br /></div>
-                
-                <h2>Facebook Page Publish Plugin Options</h2>
-                <form method="post" action="options.php">
-                        <?php settings_fields('fpp_options_group'); ?>
-                        <h3>Facebook Connection</h3>
-                        <p>Connect your blog to Facebook. See <a target="_blank" href="<?php echo BASE_URL; ?>setup.htm">detailed setup instructions</a> for help.</p>
-                        <table class="form-table">
-                                <tr valign="top">
-                                        <th scope="row"><label for="fpp_options-app_id">Application ID</label></th>
-                                        <td><input style="color:<?php echo $options['app_id_valid'] ? 'green' : 'red' ?>" id="fpp_options-app_id" name="fpp_options[app_id]" type="text" value="<?php echo htmlentities($options['app_id']); ?>" />
-                                        <a style="font-size:1.3em" target="_blank" href="<?php echo BASE_URL ?>setup.htm#app_id">?</a></td>
-                                </tr>
-                                <tr valign="top">
-                                        <th scope="row"><label for="fpp_options-app_secret">Application Secret</label></th>
-                                        <td><input style="color:<?php echo $options['app_secret_valid'] ? 'green' : ($options['app_id_valid'] ? 'red' : 'black') ?>" id="fpp_options-app_secret" name="fpp_options[app_secret]" type="text" value="<?php echo htmlentities($options['app_secret']); ?>" />
-                                        <a style="font-size:1.3em" target="_blank" href="<?php echo BASE_URL ?>setup.htm#app_secret">?</a></td>
-                                </tr>
-                                <tr valign="top">
-                                        <th scope="row"><label for="fpp_options-object_id">Page or profile ID</label></th>
-                                        <td><input style="color:<?php echo $options['object_id_valid'] ? 'green' : 'red' ?>" id="fpp_options-object_id" name="fpp_options[object_id]" type="text" value="<?php echo htmlentities($options['object_id']); ?>" />
-                                        <?php 
-                                        if ($options['app_id_valid'] && $options['app_secret_valid'] && $options['object_id_valid']) {
-                                                $object_access_token = get_option('fpp_object_access_token');
-                                                if (empty($object_access_token)) {
-                                                        echo '<a class="button-secondary" style="color:red" href="https://www.facebook.com/dialog/oauth?client_id='.urlencode($options['app_id']).'&redirect_uri='.urlencode(ADMIN_URL).'&scope='.urlencode(implode(',', fpp_get_required_permissions($options['object_type']))).'">Grant access rights!</a>';
-                                                }
-                                                else echo '<span style="color:green">Access granted.</span> <a class="button-secondary" style="color:green" href="https://www.facebook.com/dialog/oauth?client_id='.urlencode($options['app_id']).'&redirect_uri='.urlencode(ADMIN_URL).'&scope='.urlencode(implode(',', fpp_get_required_permissions($options['object_type']))).'">Renew</a>';
-                                        }
-                                        //else echo '<button class="button-secondary" disabled="disabled">Grant access rights!</button>';
-                                        ?>
-                                        <a style="font-size:1.3em" target="_blank" href="<?php echo BASE_URL ?>setup.htm#object_id">?</a>
-                                        </td>
-                                </tr>
-                                <tr valign="top">
-                                        <th scope="row">Compatibility</th>
-                                        <td>
-                                                <fieldset>
-                                                <label style="<?php echo (!fpp_get_ssl_verify()) ? 'color:#aa6600' : '' ?>"><input id="fpp_options-ignore_ssl" type="checkbox" name="fpp_options[ignore_ssl]" value="1" <?php checked('1', $options['ignore_ssl']); ?> /> <span>Ignore SSL Certificate</span></label><br />
-                                                </fieldset>
-                                        </td>
-                                </tr>
-                        </table>
-                        
-                        <h3>Publishing</h3>
-                        Publish 
-                        <fieldset style="display:inline; vertical-align:middle; line-height:20px">
-                                <label style="vertical-align:middle"><input name="fpp_options[default_publishing]" value="category" type="radio" <?php checked('1', $options['default_publishing'] == 'category'); ?> /> <span>posts from selected categories</span></label>
-                                <div style="float:right; text-align:center"><select name="fpp_options[default_publishing_categories][]" multiple="multiple" style="margin:0 5px; height:60px; width:200px" size="4">
-                                        <?php
-                                        $categories = get_categories(array('hide_empty' => false, 'orderby' => 'name', 'order' => 'ASC'));
-                                        foreach ($categories as $category) { 
-                                                echo '<option style="height:8pt" value="'.$category->cat_ID.'" '.((array_search($category->cat_ID, $options['default_publishing_categories']) !== false) ? 'selected="selected"' : '').'>'.$category->name.'</option>';
-                                        }
-                                        ?>
-                                </select><br /><span style="color:#999; font-size:7pt; line-height:9pt">Hold [Ctrl] to select multiple categories</span></div><br />
-                                <label style="vertical-align:middle; clear:both"><input name="fpp_options[default_publishing]" value="all" type="radio" <?php checked('1', $options['default_publishing'] == 'all'); ?> /> <span>all posts</label><br />
-                                <label style="vertical-align:middle"><input name="fpp_options[default_publishing]" value="none" type="radio" <?php checked('1', $options['default_publishing'] == 'none'); ?> /> <span>nothing</span></label><br />
-                        </fieldset>to Facebook unless statet otherwise.
-                        
-                        <h3>Customization</h3>
-                        <p>Customize the appearance of your posts on Facebook</p>
-                        <div style="width:450px; padding:5px; background-color:#FFF">
-                                <div style="float:left; width:40px; height:40px; padding:5px; background-color:#EEE; font-size:7pt; line-height:9pt">Page or profile photo</div>
-                                <div style="margin-left:55px">
-                                        <span style="font-weight:bold; color:#3B5998">Page or profile name</span>
-                                        <div style="width:400px; margin-bottom:10px; font-size:9pt; line-height:11pt">Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud...</div>
-                                        <div style="float:left; width:80px; height:45px; padding:5px; background-color:#EEE; font-size:7pt; line-height:9pt">Post thumbnail</div>
-                                        <div style="margin-left:95px">
-                                                <div style="font-weight:bold; color:#3B5998">Post title - link to post</div>
-                                                <div style="color:gray; font-size:8pt; line-height:8pt">Blog domain</div>
-                                                <div style="color:gray; font-size:8pt; line-height:20pt">Post categories | Post author</div>
-                                        </div>
-                                        <div style="clear:left"></div>
-                                </div>
-                        </div>
-                        <table class="form-table">
-                                <tr valign="top">
-                                        <th scope="row">Post thumbnail</th>
-                                        <td>
-                                                <fieldset>
-                                                <label><input name="fpp_options[show_thumbnail]" value="gravatar" type="radio" <?php checked('1', $options['show_thumbnail'] == 'gravatar'); ?> /> <span><a target="_blank" href="http://gravatar.com">Gravatar</a> of the post author</span></label><br />
-                                                <label><input name="fpp_options[show_thumbnail]" value="post" type="radio" <?php checked('1', $options['show_thumbnail'] == 'post'); ?> /> <span>Random post image</span></label><br />
-                                                <label><input name="fpp_options[show_thumbnail]" value="default" type="radio" <?php checked('1', $options['show_thumbnail'] == 'default'); ?> /> <span>Default thumbnail</span></label><br />
-                                                <label><input name="fpp_options[show_thumbnail]" value="none" type="radio" <?php checked('1', $options['show_thumbnail'] == 'none'); ?> /> <span>No thumbnail</span></label><br />
-                                                </fieldset>
-                                        </td>
-                                </tr>
-                                <tr valign="top">
-                                        <th scope="row">Default thumbnail</th>
-                                        <td><label for="upload_image">
-                                        <input id="upload_image" type="text" size="36" name="fpp_options[default_thumbnail_url]" value="<?php echo htmlentities($options['default_thumbnail_url']); ?>" />
-                                        <input id="upload_image_button" type="button" value="Media gallery" />
-                                        <br />Enter an URL or upload an image.
-                                        </label></td>
-                                </tr>
-                                <tr valign="top">
-                                        <th scope="row">Further information</th>
-                                        <td>
-                                                <fieldset>
-                                                <label><input id="fpp_options-show_post_author" type="checkbox" name="fpp_options[show_post_author]" value="1" <?php checked('1', $options['show_post_author']); ?> /> <span>Show the post author</span></label><br />
-                                                <label><input id="fpp_options-show_post_categories" type="checkbox" name="fpp_options[show_post_categories]" value="1" <?php checked('1', $options['show_post_categories']); ?> /> <span>Show the post categories</span></label><br />
-                                                </fieldset>
-                                        </td>
-                                </tr>
-                        </table>
-                        <p class="submit">
-                                <input type="submit" class="button-primary" value="<?php _e('Save Changes') ?>" />
-                        </p>
-                </form>
-        </div>
-        <?php
+        return false;
 }
 
 /**
- * @last_review 3.0.0
+ * @return True if SSL certificates should be checked
+ */
+function fpp_get_ssl_verify() {
+        $options = get_option('fpp_options');
+        return !$options['ignore_ssl'];
+}
+
+/**
+ * @param object_type Array of string or string, either 'page' or 'profile'
+ * @return Write permissions for a given Facebook object as string
+ * @last_review 0.3.1
  */
 function fpp_get_required_permissions($object_type) {
-        if ($object_type == 'page') {
+        if (!is_array($object_type)) $object_type = array($object_type); 
+        if (array_search('page', $object_type) !== false) {
                 return array('manage_pages', 'offline_access', 'share_item');
         } else {
                 return array('offline_access', 'share_item');
@@ -722,15 +545,21 @@ function fpp_get_required_permissions($object_type) {
 }
 
 /**
- * @last_review 3.0.0
+ * @return Post author name as a string
+ * @last_review 0.3.1
  */
 function fpp_get_post_author($post) {
         $user_info = get_userdata($post->post_author);
-        return $user_info->user_login;
+        $author = trim($user_info->first_name.' '.$user_info->last_name);
+        if (empty($author)) {
+                $author = $user_info->user_login;
+        }
+        return $author;
 }
 
 /**
- * @last_review 3.0.0
+ * @return Post categories as csv string
+ * @last_review 0.3.0
  */
 function fpp_get_post_categories($post) {
         $categories = get_the_category($post->ID);
@@ -744,11 +573,18 @@ function fpp_get_post_categories($post) {
 }
 
 /**
- * @last_review 3.0.0
+ * @return URL of the featured or first embedded or attachement image as string
+ * @last_review 0.3.1
  */
 function fpp_get_post_image($post) {
+
+        $thumbnail_id = get_post_thumbnail_id($post->ID);
+        if (!isset($thumbnail_id)) {
+                $image_url = wp_get_attachment_url($thumbnail_id);
+        }
+        
         if (!isset($image_url)) {
-                preg_match('/<img .*src=["|\']([^"|\']+)/i', $post->post_content, $matches);
+                preg_match('/<img .*?src=["|\']([^"|\']+)/i', $post->post_content, $matches);
                 if (!empty($matches[1])) return $matches[1];
         }
 
@@ -765,11 +601,220 @@ function fpp_get_post_image($post) {
         return '';
 }
 
+/**********************************************************************
+ * HTML rendering
+ **********************************************************************/
+/**
+ * Renders the options page. Uses the settings API (options validation, checking and storing by WP).
+ * Also validates certain options (Facebook access) that need redirecting.
+ * @last_review 0.3.1
+ */
+function fpp_render_options_page() {
+        $options = get_option('fpp_options');
+
+        $error = get_option('fpp_error');
+        if (!empty($error)) {
+              echo '<div class="error">'.$error.'</div>';  
+              update_option('fpp_error', '');
+        }
+        
+        $profile_access_token = get_option('fpp_profile_access_token');
+        
+        if ($options['app_id_valid'] and $options['app_secret_valid'] and empty($profile_access_token) and array_key_exists('code', $_GET)) {
+                // User clicked the authorize button, get profile_access_token:
+                try {
+                        $profile_access_token = fpp_acquire_profile_access_token($options['app_id'], $options['app_secret'], ADMIN_URL, $_GET['code']);
+                        update_option('fpp_profile_access_token', $profile_access_token);
+                        update_option('fpp_object_access_token', '');
+                } catch (CommunicationException $exception) {
+                        echo '<div class="error"><p><strong>'.$exception->getMessage().'</strong></p><p>Your application\'s access permissions could not be granted.</p></div>';
+                }
+        }
+
+        // Check if access tokens are valid:
+        if ($options['app_id_valid'] and $options['app_secret_valid']) {
+                try {
+                        // Verify only profile access token (== object access token):
+                        if (!fpp_verify_profile_access_permissions($profile_access_token, fpp_get_required_permissions(array('page', 'profile')))) {
+                                $profile_access_token = '';
+                                $object_access_token = '';
+                                update_option('fpp_object_access_token', $object_access_token);
+                                update_option('fpp_profile_access_token', $profile_access_token);
+                                throw new CommunicationException('Some or all access permissions are missing. Please click the button <em>Grant access rights!</em> and authorize the plugin to post to your Facebook profile or page.');
+                        }
+                        
+                        $object_access_token = get_option('fpp_object_access_token');
+                        
+                        // Acquire object access token if empty:
+                        if (!empty($profile_access_token) and $options['object_id_valid'] and empty($object_access_token)) {
+                                if ($options['object_type'] == 'page') {
+                                        $object_access_token = fpp_acquire_page_access_token($options['object_id'], $profile_access_token);
+                                        update_option('fpp_object_access_token', $object_access_token);
+                                } else {
+                                        update_option('fpp_object_access_token', $profile_access_token);
+                                }
+                        }
+                        
+                        // Verify page access and profile access token together:
+                        if ($options['object_id_valid'] and ($options['object_type'] == 'page')) {
+                                if (!fpp_verify_page_access_token($options['object_id'], $object_access_token)) {
+                                        $profile_access_token = '';
+                                        $object_access_token = '';
+                                        update_option('fpp_object_access_token', $object_access_token);
+                                        update_option('fpp_profile_access_token', $profile_access_token);
+                                        throw new CommunicationException('Some or all access permissions are missing. Please click the button <em>Grant access rights!</em> and authorize the plugin to post to your Facebook profile or page.');
+                                }
+                        }
+                } catch (CommunicationException $exception) {
+                        echo '<div class="error"><p><strong>'.$exception->getMessage().'</strong></p><p>Your page or profile\'s access permissions could not be verified.</p></div>';
+                }
+        }
+        ?>
+        <div class="wrap">
+                <div class="icon32" id="icon-options-general"><br /></div>
+                
+                <h2>Facebook Page Publish Plugin Options</h2>
+                <form method="post" action="options.php">
+                        <?php settings_fields('fpp_options_group'); ?>
+                        <h3>1. Facebook Connection</h3>
+                        <p>Connect your blog to Facebook. See <a target="_blank" href="<?php echo BASE_URL; ?>setup.htm">detailed setup instructions</a> for help.</p>
+                        <table class="form-table">
+                                <tr valign="top">
+                                        <th scope="row"><label for="fpp_options-app_id">Application ID</label></th>
+                                        <td>
+                                        <input style="color:<?php echo $options['app_id_valid'] ? 'green' : (empty($options['app_id']) ? 'black' : 'red') ?>" id="fpp_options-app_id" name="fpp_options[app_id]" type="text" value="<?php echo htmlentities($options['app_id']); ?>" />
+                                        <a style="font-size:1.3em" target="_blank" href="<?php echo BASE_URL ?>setup.htm#app_id">?</a>
+                                        <?php 
+                                        if ($options['app_id_valid'] and $options['app_secret_valid']) {
+                                                $profile_access_token = get_option('fpp_profile_access_token');
+                                                if (empty($profile_access_token)) {
+                                                        echo '<a class="button-secondary" style="color:red" href="https://www.facebook.com/dialog/oauth?client_id='.urlencode($options['app_id']).'&redirect_uri='.urlencode(ADMIN_URL).'&scope='.urlencode(implode(',', fpp_get_required_permissions(array('page', 'profile')))).'">Grant access rights!</a>';
+                                                }
+                                                else echo '<span style="color:green">Access granted.</span>';// <a class="button-secondary" style="color:green" href="https://www.facebook.com/dialog/oauth?client_id='.urlencode($options['app_id']).'&redirect_uri='.urlencode(ADMIN_URL).'&scope='.urlencode(implode(',', fpp_get_required_permissions(array('page', 'profile')))).'">Renew for '.$options['app_id'].'</a>';
+                                        }
+                                        else echo '<a class="button-secondary" disabled="disabled">Grant access rights!</a>';      
+                                        ?>
+                                        </td>
+                                </tr>
+                                <tr valign="top">
+                                        <th scope="row"><label for="fpp_options-app_secret">Application Secret</label></th>
+                                        <td><input style="color:<?php echo $options['app_secret_valid'] ? 'green' : ($options['app_id_valid'] ? 'red' : 'black') ?>" id="fpp_options-app_secret" name="fpp_options[app_secret]" type="text" value="<?php echo htmlentities($options['app_secret']); ?>" />
+                                        <a style="font-size:1.3em" target="_blank" href="<?php echo BASE_URL ?>setup.htm#app_secret">?</a></td>
+                                </tr>
+                                <tr valign="top">
+                                        <th scope="row">Compatibility</th>
+                                        <td>
+                                                <fieldset>
+                                                <label style="<?php echo (!fpp_get_ssl_verify()) ? 'color:#aa6600' : '' ?>"><input id="fpp_options-ignore_ssl" type="checkbox" name="fpp_options[ignore_ssl]" value="1" <?php checked('1', $options['ignore_ssl']); ?> /> <span>Ignore SSL Certificate</span></label><br />
+                                                </fieldset>
+                                        </td>
+                                </tr>
+                        </table>
+                        <p class="submit">
+                                <input type="submit" class="button-primary" value="<?php _e('Save Changes') ?>" />
+                        </p>
+                        
+                        <h3>2. Publishing</h3>
+                        <p>Specify the posts to publish and decide on which Facebook wall they will appear.</p>
+                        <table class="form-table">
+                                <tr valign="top">
+                                        <th scope="row"><label for="fpp_options-object_id">Page or profile ID</label></th>
+                                        <td><input style="color:<?php echo $options['object_id_valid'] ? 'green' : (empty($options['object_id']) ? 'black' : 'red') ?>" id="fpp_options-object_id" name="fpp_options[object_id]" type="text" value="<?php echo htmlentities($options['object_id']); ?>" />
+                                        <a style="font-size:1.3em" target="_blank" href="<?php echo BASE_URL ?>setup.htm#object_id">?</a>
+                                        <?php
+                                        $profile_access_token = get_option('fpp_profile_access_token');
+                                        if (!empty($profile_access_token)) {
+                                                echo '<div id="object_id_list"></div>';
+                                                echo '<script type="text/javascript">jQuery("#object_id_list").show_object_id_list("#fpp_options-object_id", "'.urlencode($profile_access_token).'");</script>';
+                                        }
+                                        ?>
+                                        </td>
+                                </tr>
+                                <tr valign="top">
+                                        <th scope="row">Publish by default</th>
+                                        <td>
+                                                <div style="float:left">
+                                                        <fieldset style="line-height:20px">
+                                                        <label style="vertical-align:middle"><input name="fpp_options[default_publishing]" value="all" type="radio" <?php checked('1', $options['default_publishing'] == 'all'); ?> /> <span>all posts</span></label><br />
+                                                        <label style="vertical-align:middle"><input name="fpp_options[default_publishing]" value="category" type="radio" <?php checked('1', $options['default_publishing'] == 'category'); ?> /> <span>posts from selected categories</label><br />
+                                                        <label style="vertical-align:middle"><input name="fpp_options[default_publishing]" value="none" type="radio" <?php checked('1', $options['default_publishing'] == 'none'); ?> /> <span>nothing</span></label><br />
+                                                        </fieldset>
+                                                </div>
+                                                <div style="margin-left:230px; width:200px; text-align:center">
+                                                        <select name="fpp_options[default_publishing_categories][]" multiple="multiple" style="height:60px; width:200px" size="4">
+                                                                <?php
+                                                                $categories = get_categories(array('hide_empty' => false, 'orderby' => 'name', 'order' => 'ASC'));
+                                                                foreach ($categories as $category) { 
+                                                                        echo '<option style="height:8pt" value="'.$category->cat_ID.'" '.((array_search($category->cat_ID, $options['default_publishing_categories']) !== false) ? 'selected="selected"' : '').'>'.$category->name.'</option>';
+                                                                }
+                                                                ?>
+                                                        </select><br />
+                                                        <span style="color:#999; font-size:7pt; line-height:9pt">Hold [Ctrl] to select multiple categories</span>
+                                                </div>
+                                        </td>
+                                </tr>
+                        </table>
+                        <p class="submit">
+                                <input type="submit" class="button-primary" value="<?php _e('Save Changes') ?>" />
+                        </p>
+                        
+                        <h3>3. Customization</h3>
+                        <p>Customize the appearance of your posts on Facebook.</p>
+                        <div style="width:450px; padding:5px; background-color:#FFF">
+                                <div style="float:left; width:40px; height:40px; padding:5px; background-color:#EEE; font-size:7pt; line-height:9pt">Page or profile photo</div>
+                                <div style="margin-left:55px">
+                                        <span style="font-weight:bold; color:#3B5998">Page or profile name</span>
+                                        <div style="margin-bottom:10px; font-size:9pt; line-height:11pt">This is a short excerpt of your post with an example link to Wordpress <a target="_blank" href="http://wordpress.org">http://wordpress.org</a>. Lorem ipsum dolor...<br /><label><input id="fpp_options-show_post_text" type="checkbox" name="fpp_options[show_post_text]" value="1" <?php checked('1', $options['show_post_text']); ?> /> Post excerpt</label> <label><input id="fpp_options-show_post_link" type="checkbox" name="fpp_options[show_post_link]" value="1" <?php checked('1', $options['show_post_link']); ?> /> Include link URLs</label></div>
+                                        <div style="float:left;  padding:0 3px 3px 3px; background-color:#EEE; font-size:8pt;">
+                                                Thumbnail<br>
+                                                <fieldset>
+                                                <label><input name="fpp_options[show_thumbnail]" value="gravatar" type="radio" <?php checked('1', $options['show_thumbnail'] == 'gravatar'); ?>/> <span>Gravatar <a target="_blank" href="http://gravatar.com">?</a></span></label><br />
+                                                <label><input name="fpp_options[show_thumbnail]" value="post" type="radio" <?php checked('1', $options['show_thumbnail'] == 'post'); ?> /> <span>From post</span></label><br />
+                                                <label><input name="fpp_options[show_thumbnail]" value="default" type="radio" <?php checked('1', $options['show_thumbnail'] == 'default'); ?> /> <span>Default</span></label><br />
+                                                <label><input name="fpp_options[show_thumbnail]" value="none" type="radio" <?php checked('1', $options['show_thumbnail'] == 'none'); ?> /> <span>None</span></label><br />
+                                                </fieldset>
+                                        </div>
+                                        <div style="margin-left:95px">
+                                                <div style="font-weight:bold; color:#3B5998">Post title linking to your post</div>
+                                                <div style="color:gray; font-size:8pt; line-height:8pt">Blog domain</div>
+                                                <div style="color:gray; font-size:8pt; line-height:20pt">
+                                                        <label><input id="fpp_options-show_post_author" type="checkbox" name="fpp_options[show_post_author]" value="1" <?php checked('1', $options['show_post_author']); ?> /> Post author</label> |
+                                                        <label><input id="fpp_options-show_post_categories" type="checkbox" name="fpp_options[show_post_categories]" value="1" <?php checked('1', $options['show_post_categories']); ?> /> Post categories</label>
+                                                </div>
+                                        </div>
+                                        <div style="clear:left"></div>
+                                </div>
+                        </div>
+                        <table class="form-table">
+                                <tr valign="top">
+                                        <th scope="row">Default thumbnail</th>
+                                        <td>
+                                        <fieldset>
+                                        <label>
+                                                <input style="text-align:left" id="upload_image" type="text" size="36" name="fpp_options[default_thumbnail_url]" value="<?php echo htmlentities($options['default_thumbnail_url']); ?>" />
+                                                <input id="upload_image_button" type="button" value="Media gallery" /><br />
+                                                <span style="color:#999; font-size:7pt; line-height:9pt">Enter an URL or upload an image.</span>
+                                        </label>
+                                        </fieldset>
+                                        </td>
+                                </tr>
+                        </table>
+                        <p class="submit">
+                                <input type="submit" class="button-primary" value="<?php _e('Save Changes') ?>" />
+                        </p>
+                </form>
+        </div>
+
+        <!--<div id="nope" onmouseover="show_object_list('nope', '<?php echo urlencode(get_option('fpp_profile_access_token')); ?>')">HERE</div>
+        -->
+        <?php
+}
+
 /**
  * Render Facebook recognized meta tags (Open Graph protocol).
  * Facebooks uses them to refine shared links for example.
  *
- * @last_review 3.0.0
+ * @last_review 0.3.0
  */
 function fpp_render_meta_tags($post) {
         $options = get_option('fpp_options');
@@ -785,26 +830,25 @@ function fpp_render_meta_tags($post) {
         }
         echo '<meta property="og:description" content="'.implode(' | ', $description).'"/>';
                 
-        if ($options['show_thumbnail'] == 'post') {
+        if (($options['show_thumbnail'] == 'post') and empty($post->post_password)) {
                 $image_url = fpp_get_post_image($post, $options['show_thumbnail'] == 'gravatar');
         }
         else if ($options['show_thumbnail'] == 'gravatar') {
-                preg_match('/<img .*src=["|\']([^"|\']+)/i', get_avatar($post->post_author), $matches);
+                preg_match('/<img .*?src=["|\']([^"|\']+)/i', get_avatar($post->post_author), $matches);
                 if (!empty($matches[1])) $image_url = $matches[1];
         }
         else if ($options['show_thumbnail'] == 'none') {
                 $image_url = BASE_URL.'line.png';
         }
-        if (!isset($image_url) or empty($image_url))
+        if (!isset($image_url) or empty($image_url)) {
                  $image_url = $options['default_thumbnail_url'];
+        }
         echo '<meta property="og:image" content="'.esc_attr($image_url)/*, ENT_COMPAT, 'UTF-8')*/.'"/>';
 }
 
 /**
  * Renders a 'publish to facebook' checkbox. Renders the box only if 
  * the current post is a real post, not a page or something else.
- *
- * TODO: password protected -> disable checkbox? | plugin not configured -> disable checkbox
  */
 function fpp_render_post_button() {
         global $post;
@@ -816,17 +860,25 @@ function fpp_render_post_button() {
         } else {
                 echo '<label for="fpp_post_to_facebook"><img style="vertical-align:middle; margin:2px" src="'.BASE_URL.'publish_icon.png" /> Post <em>again</em> to Facebook </label><input type="checkbox" value="1" id="fpp_post_to_facebook" name="fpp_post_to_facebook" '.(empty($object_access_token) ? 'disabled="disabled"' : '').' />';
         }
-        if (empty($object_access_token)) echo '<div><em style="color:#aa6600">Facebook Page Publish is not set up.</em></div>';
-        if ($post->post_status == "private")
+        if (empty($object_access_token)) {
+                echo '<div><em style="color:#aa6600">Facebook Page Publish is not set up.<br />Please check your <a href="options-general.php?page='.plugin_basename(__FILE__).'">plugin settings</a>.</em></div>';
+        }
+        if ($post->post_status == "private") {
                 echo '<div><em style="color:#aa6600">Private posts are not published</em></div>';
+        }
         echo '<input type="hidden" name="fpp_send_from_admin" value="1" />';
         
         $error = get_option('fpp_error');
-        if (!empty($error)) echo '<div class="error"><strong>Your Facebook Page Publish plugin reports an error. Please check your <a href="options-general.php?page='.plugin_basename(__FILE__).'">plugin settings</a>.</strong></div>';
+        if (!empty($error)) {
+                echo '<div class="error"><strong>Your Facebook Page Publish plugin reports an error. Please check your <a href="options-general.php?page='.plugin_basename(__FILE__).'">plugin settings</a>.</strong></div>';
+        }
 }
 
+/**********************************************************************
+ * Others
+ **********************************************************************/
 /**
- * @last_review 3.0.0
+ * @last_review 0.3.0
  */
 function fpp_validate_options($input) {
         $options = get_option('fpp_options');
@@ -835,6 +887,8 @@ function fpp_validate_options($input) {
         $options['show_thumbnail'] = $input['show_thumbnail'];
         $options['show_post_author'] = array_key_exists('show_post_author', $input) && !empty($input['show_post_author']);
         $options['show_post_categories'] = array_key_exists('show_post_categories', $input) && !empty($input['show_post_categories']);
+        $options['show_post_text'] = array_key_exists('show_post_text', $input) && !empty($input['show_post_text']);
+        $options['show_post_link'] = array_key_exists('show_post_link', $input) && !empty($input['show_post_link']);
         $options['default_thumbnail_url'] = trim($input['default_thumbnail_url']);
         
         // Validate customization options:
@@ -842,10 +896,13 @@ function fpp_validate_options($input) {
                 add_settings_error('fpp_options', 'customization_error', 'The given default thumbnail URL is not valid. Any valid URL has to start with http:// or https://.</p><p><font style="font-weight:normal">Facebook won\'t be able to display the choosen default thumbnail.</p>');
         
         // Connection options:
-        if ($options['app_id'] != $input['app_id'] || $options['object_id'] != $input['object_id']) {
-                update_option('fpp_object_access_token', '');
+        if ($options['app_id'] != $input['app_id']) {
                 update_option('fpp_profile_access_token', '');
+                update_option('fpp_object_access_token', '');
+        } else if ($options['object_id'] != $input['object_id']) {
+                update_option('fpp_object_access_token', '');
         }
+        
         $options['app_id'] = $input['app_id'];
         $options['object_id'] = $input['object_id'];
         $options['app_secret'] = $input['app_secret'];
@@ -864,19 +921,80 @@ function fpp_validate_options($input) {
                         $options['app_id_valid'] = $object_classification[$options['app_id']] == 'application';
                         $options['object_type'] = $object_classification[$options['object_id']];
                         $options['object_id_valid'] = (($options['object_type'] == 'profile') or ($options['object_type'] == 'page')); 
-                        if (!$options['app_id_valid'])
-                                throw new FacebookErrorException('Invalid application ID. Please refer to the <a target="_blank" href="'.BASE_URL.'setup.htm#app_id">detailed setup instructions</a>.');
-                        if (!$options['object_id_valid'])
-                                throw new FacebookErrorException('Invalid user or page ID. Please refer to the <a target="_blank" href="'.BASE_URL.'setup.htm#object_id">detailed setup instructions</a>.');
                 }
-                        
-                $options['app_secret_valid'] = (!empty($options['app_secret']) && $options['app_id_valid']) ? fpp_is_valid_facebook_application($options['app_id'], $options['app_secret'], ADMIN_URL) : false;
-                if (!$options['app_secret_valid'] && $options['app_id_valid'])
+                $options['app_secret_valid'] = (!empty($options['app_secret']) and $options['app_id_valid']) ? fpp_is_valid_facebook_application($options['app_id'], $options['app_secret'], ADMIN_URL) : false;
+                
+                if (!empty($options['app_id']) and !$options['app_id_valid']) {
+                        throw new FacebookErrorException('Invalid application ID. Please refer to the <a target="_blank" href="'.BASE_URL.'setup.htm#app_id">detailed setup instructions</a>.');
+                }
+                if (!empty($options['object_id']) and !$options['object_id_valid'])  {
+                        throw new FacebookErrorException('Invalid user or page ID. Please refer to the <a target="_blank" href="'.BASE_URL.'setup.htm#object_id">detailed setup instructions</a>.');
+                }
+                if (!$options['app_secret_valid'] and $options['app_id_valid'])
                         throw new FacebookErrorException('Invalid application secret. Please refer to the <a target="_blank" href="'.BASE_URL.'setup.htm#app_secret">detailed setup instructions</a>.');
                   
         } catch (CommunicationException $exception) {
-                add_settings_error('fpp_options', 'connection_error', $exception->getMessage().'</p><p><font style="font-weight:normal">Your connection options could not be validated.</p>');
+                add_settings_error('fpp_options', 'connection_error', $exception->getMessage().'<p><font style="font-weight:normal">Your connection options could not be validated.</p>');
         }
         return $options;
+}
+
+/**
+ * Initializes the plugin options with either default or existing
+ * values (in case there is already a version installed).
+ */
+function fpp_initialize_options() {
+        // default options:
+        $options = array(
+                'app_id' => '',
+                'app_id_valid' => false,
+                'app_secret' => '',
+                'app_secret_valid' => false,
+                'object_id' => '',
+                'object_id_valid' => false,
+                'object_type' => '',
+                'ignore_ssl' => false,
+                'default_publishing' => 'all',
+                'default_publishing_categories' => array(),
+                'default_thumbnail_url' => BASE_URL.'line.png',
+                'show_post_categories' => true,
+                'show_post_author' => true,
+                'show_post_text' => true,
+                'show_post_link' => true,
+                'show_thumbnail' => 'gravatar');
+        
+        $current_version = get_option('fpp_installed_version');
+        $current_options = get_option('fpp_options');
+        
+        $object_access_token = get_option('fpp_object_access_token');
+        $profile_access_token = get_option('fpp_profile_access_token');
+        
+        // Plugin previously installed:
+        if (is_array($current_options)) {
+                foreach ($options as $key => $value) {
+                        if (array_key_exists($key, $current_options)) {
+                                $options[$key] = $current_options[$key];
+                        }
+                }
+        
+                if (empty($current_version)) { // version <= 0.2.2
+                        $options['app_id_valid'] = !empty($current_options['page_id']);
+                        $options['app_secret_valid'] = !empty($current_options['page_id']);
+                        $options['object_id'] = $current_options['page_id'];
+                        $options['object_id_valid'] = !empty($current_options['page_id']);
+                        $options['object_type'] = 'page';
+                        $options['show_thumbnail'] = $current_options['show_gravatar'] ? 'gravatar' : 'post';
+                        
+                        $object_access_token = get_option('fpp_page_access_token');
+                        
+                        delete_option('fpp_page_access_token');
+                        delete_option('fpp_post_to_facebook');
+                }
+        }
+        update_option('fpp_options', $options);
+        update_option('fpp_object_access_token', $object_access_token);
+        update_option('fpp_profile_access_token', $profile_access_token);
+        update_option('fpp_error', '');
+        update_option('fpp_installed_version', VERSION);
 }
 ?>

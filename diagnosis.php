@@ -43,28 +43,57 @@
         }
         </style>
 </head>
-
 <body>
         <h1>Facebook Page Publish - Fault Diagnosis</h1>
-        <h2>Check wether your server can connect to facebook</h2>
-        
+        <p>In order for the plugin to work, every test should return a positive response. Errors are mostly due to server limitations or misconfiguration. If you observe an error, try the compatibility options on the plugin settings page and/or post your test results in the <a href="http://wordpress.org/tags/facebook-page-publish">forum</a>.</p>
+        <h2>Check if your server can connect to Facebook</h2>
+        <p>Sends a https request to Facebook to detect possible connection errors. Expects a code 400 / Bad request response.</p>
         <?php
-        require_once( dirname(__FILE__) . '/../../../wp-load.php' );
+        require_once(dirname(__FILE__) . '/../../../wp-load.php');
 
         $request = new WP_Http;
-        $api_url = 'https://graph.facebook.com/19292868552';
+        $api_url = 'https://graph.facebook.com/oauth/access_token?client_id=fake-id&client_secret=fake-id&redirect_uri=http://fake-uri.com';
         $response = $request->get($api_url);
         
         if (array_key_exists('errors', $response)) {
                 echo '<h3 style="color:red">There seems to be a problem</h3>';
-                echo '<p>Try enabling the compatibility settings of the plugin</p>';
+                echo '<p>Try enabling the compatibility options of the plugin</p>';
         } else {
                 echo '<h3 style="color:green">Everything looks fine</h3>';
         }
         
-        echo '<pre>';
+        echo '<pre style="font-size:8pt">';
         print_r($response);
         echo '</pre>';
+        ?>
+        
+        <h2>Check if the SSL module is loaded</h2>
+        <p>Facebook requires secure https transmissions. Therefore your webserver has to support SSL. Not all hoster, especially freehoster, offer this service.</p>
+        <?php
+        function check_https1() {
+                ob_start();
+                phpinfo(INFO_GENERAL);
+                $phpinfo = ob_get_contents();
+                ob_end_clean();
+                $s = strpos($phpinfo,'Registered PHP Streams');
+                $e = strpos($phpinfo, "\n", $s);
+                return strstr(substr($phpinfo, $s, $e - $s), 'https');
+        }
+
+        function check_https2() {
+                ob_start();
+                phpinfo(INFO_GENERAL);
+                $test = strstr(ob_get_contents(), 'https');
+                ob_end_clean();
+                return ($test == true);
+        }
+        
+        if (!check_https1() and !check_https2()) {
+                echo '<h3 style="color:red">SSL module not detected.</h3>';
+                echo '<p><em>Note: This test does not detect all possible SSL modules and configurations</em></p>';
+        } else {
+                echo '<h3 style="color:green">Everything looks fine</h3>';
+        }
         ?>
 </body>
 </html>

@@ -1,7 +1,3 @@
-/**
- * This script enables the Facebook Page Publish - Plugin to use the
- * standard wordpress media gallery to select a default thumbnail.
- */
 jQuery(document).ready(function() {
 
 jQuery('#upload_image_button').click(function() {
@@ -17,3 +13,51 @@ window.send_to_editor = function(html) {
 }
 
 });
+
+jQuery.fn.show_object_id_list = function(anchor_id, profile_access_token) {
+
+        $j = jQuery.noConflict();
+        dropdown = $j(this);
+        anchor = $j(anchor_id);
+        
+        var url = "https://graph.facebook.com/me?callback=?&access_token=" + profile_access_token;
+        $j.getJSON(url, function(json) {
+                        field = $j("<div>");
+                        field.css('display', 'none');
+                        field.css('cursor','pointer');
+                        field.hover(function(){
+                                $j(this).css('color', 'gray');
+                        },function(){
+                                $j(this).css('color', 'black');
+                        });
+                        field.html(json.name + " <em>Profile</em>");
+                        field.click(function() {anchor.val(json.id)});
+                        dropdown.append(field);
+                        dropdown.show();
+                        field.show(400);
+
+        });
+        
+        var url = "https://graph.facebook.com/me/accounts?callback=?&access_token=" + profile_access_token;
+        $j.getJSON(url, function(json) {
+                $j.each(json.data, function(i, fb) {
+                        if ((fb.category != "Application") && (fb.category != "Group")) {
+                                field = $j("<div>");
+                                field.css('display', 'none');
+                                field.css('cursor','pointer');
+                                field.hover(function(){
+                                        $j(this).css('color', 'gray');
+                                },function(){
+                                        $j(this).css('color', 'black');
+                                });
+                                field.html(fb.name + " <em>" + fb.category + "</em>");
+                                field.click(function() {anchor.val(fb.id)});
+                                dropdown.append(field);
+                                dropdown.show();
+                                field.show(400);
+                        }
+                });
+
+        });
+
+};

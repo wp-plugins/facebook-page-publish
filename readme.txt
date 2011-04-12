@@ -9,7 +9,7 @@ Stable tag: trunk
 
 == Description ==
 
-"Facebook Page Publish" publishes your blog posts to your profile or page! Posts appear on the wall of your choice as if you would share a link. The authors [gravatar](http://gravatar.com), a self-choosen or random post image, the title, author, categories and a short excerpt of your post can be shown.
+"Facebook Page Publish" publishes your blog posts to the wall of your Facebook profile or page. Posts appear on the wall of your choice as if you would share a link. The authors [gravatar](http://gravatar.com), a self-choosen or random post image, the title, author, categories and a short excerpt of your post can be shown.
 
 Decide yourself when and what post to publish. Local and remote publishing based e.g. on the post category.
 
@@ -17,8 +17,7 @@ Uses the modern Facebook graph-API and integrates easily into your WordPress Blo
 
 All you need do to is (see *Installation*):
 
-* Create a *Facebook application*
-* Connect to your *Facebook profile* OR *page*
+* Create a [Facebook application](https://www.facebook.com/developers/createapp.php)
 
 Technical features:
 
@@ -40,7 +39,7 @@ Done? Then go to the plugin's settings page and follow the detailed setup instru
 
 = I have a question, what should I do? =
 
-Please use the forum.
+Please post your question in the [forum](http://wordpress.org/tags/facebook-page-publish)!
 
 == Screenshots ==
 
@@ -76,6 +75,18 @@ Please use the forum.
 * Update: New settings introduced: publishing policy (thanks to *Li-An*!) and appearance customization.
 * Major bugfixes: Scheduled and remote posts (thanks to *ksoszka*!), posting as password-protected, private or draft (thanks to *tbjers*!)
 
+= 0.3.1 =
+* Bugfix: Password protected posts: incorrect title and image was shown
+* Bugfix: Shortcodes are now processed and no longer (incompletely) stripped (thanks to *cntrlwiz*!)
+* Bugfix: diagnosis script URL now correct
+* Bugfix: Author name now taken from first / last name, if those are not empty (thanks to *cntrlwiz*!)
+* Bugfix: Timeout for http requests now 20s, 5s was too short on some servers (thanks to *misterjoecity*!)
+* Bugfix: Fixed error in fpp_acquire_profile_access_token (thanks to *misterjoecity*!!)
+* Update: Diagnostic script detects SSL availability and https connections (thanks to *mioto*!)
+* Update: New settings introduces: disallow publishing of post excerpt
+* Update: Thumbnail from post: use featured thumbnail, if available (thanks to *Luis Marcos Loaiza*!)
+* Update: Profile and page ID's are now automatically detected, major GUI redesign
+
 == Upgrade Notice ==
 
 = 0.2.1 =
@@ -86,3 +97,6 @@ Bugfixes, upgrade recommended.
 
 = 0.3.0 =
 Major update and bugfixes, upgrade strongly recommended.
+
+= 0.3.1 =
+Updates, bugfixes, upgrade recommended.
