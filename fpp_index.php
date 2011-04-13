@@ -21,7 +21,7 @@
  * Plugin URI:  http://wordpress.org/extend/plugins/facebook-page-publish/
  * Description: Publishes your posts on the wall of a Facebook profile or page.
  * Author:      Martin Tschirsich
- * Version:     0.3.1
+ * Version:     0.3.2
  * Author URI:  http://www.tu-darmstadt.de/~m_t/
  */
 
@@ -262,7 +262,7 @@ function fpp_publish_to_facebook($post, $object_id, $object_acces_token) {
 
                 if ($options['show_post_link']) {
                         $message = wp_kses($message, array('a' => array('href' => array())));
-                        $message = preg_replace('/<a[^>]*?href=["|\']([^"|\']+).[^>]*?>(.*?)<\/a>/i', '${2} ${1}', $message);
+                        $message = preg_replace('/<a[^>]*?href=["|\']([^"|\']+).[^>]*?>(.*?)<\/a>/is', '${2} ${1}', $message);
                         $message = trim(stripslashes(html_entity_decode($message, ENT_QUOTES, 'UTF-8')));
                 }
                 else {
@@ -577,18 +577,23 @@ function fpp_get_post_categories($post) {
  * @last_review 0.3.1
  */
 function fpp_get_post_image($post) {
-
-        $thumbnail_id = get_post_thumbnail_id($post->ID);
-        if (!isset($thumbnail_id)) {
-                $image_url = wp_get_attachment_url($thumbnail_id);
+        $image_url = '';
+        
+        if (current_theme_supports('post-thumbnails')) { // get_post_thumbnail_id must be supported by the theme!
+        
+                $thumbnail_id = get_post_thumbnail_id($post->ID);
+                if ($thumbnail_id !== null) {
+                        $image_url = wp_get_attachment_image_src($thumbnail_id);
+                        $image_url = $image_url[0];
+                }
         }
         
-        if (!isset($image_url)) {
+        if (empty($image_url)) {
                 preg_match('/<img .*?src=["|\']([^"|\']+)/i', $post->post_content, $matches);
                 if (!empty($matches[1])) return $matches[1];
         }
 
-        if (!isset($image_url)) {
+        if (empty($image_url)) {
                 $images = get_children('post_type=attachment&post_mime_type=image&post_parent='.$post->ID);
                 if (!empty($images)) {
                         foreach ($images as $image_id => $value) {
@@ -598,7 +603,7 @@ function fpp_get_post_image($post) {
                         }
                 }
         }
-        return '';
+        return $image_url;
 }
 
 /**********************************************************************
@@ -829,9 +834,9 @@ function fpp_render_meta_tags($post) {
                 $description[] = esc_attr(fpp_get_post_categories($post));/*, ENT_COMPAT, 'UTF-8')*/;
         }
         echo '<meta property="og:description" content="'.implode(' | ', $description).'"/>';
-                
+        
         if (($options['show_thumbnail'] == 'post') and empty($post->post_password)) {
-                $image_url = fpp_get_post_image($post, $options['show_thumbnail'] == 'gravatar');
+                $image_url = fpp_get_post_image($post);
         }
         else if ($options['show_thumbnail'] == 'gravatar') {
                 preg_match('/<img .*?src=["|\']([^"|\']+)/i', get_avatar($post->post_author), $matches);

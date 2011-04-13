@@ -49,6 +49,9 @@ Please post your question in the [forum](http://wordpress.org/tags/facebook-page
 
 == Changelog ==
 
+= 0.3.2 =
+* Critical bugfix: fpp_get_post_image crashed when theme support for post thumbnails was not supported!
+
 = 0.3.1 =
 * Bugfix: Password protected posts: incorrect title and image was shown
 * Bugfix: Shortcodes are now processed and no longer (incompletely) stripped (thanks to *cntrlwiz*!)
@@ -88,6 +91,9 @@ Please post your question in the [forum](http://wordpress.org/tags/facebook-page
 * First internal alpha release.
 
 == Upgrade Notice ==
+
+= 0.3.2 =
+Critical bugfixes, upgrade strongly recommended.
 
 = 0.3.1 =
 Updates, bugfixes, upgrade recommended.
