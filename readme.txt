@@ -43,37 +43,11 @@ Please post your question in the [forum](http://wordpress.org/tags/facebook-page
 
 == Screenshots ==
 
-1. The settings page.
-2. Check to publish your post to Facebook.
-3. An example post on Facebook.
+1. Check to publish your post to Facebook.
+2. An example post on Facebook.
+3. The settings page.
 
 == Changelog ==
-
-= 0.1.0 =
-* First internal alpha release.
-
-= 0.2.0 =
-* Security: Only authors can publish to Facebook.
-* Bugfix: Only posts can be published (no pages etc.).
-* Bugfix: Character encoding for categories and title fixed.
-* Bugfix: Facebook link description length is 420 chars max.
-
-= 0.2.1 =
-* Bugfix: Not all images in a post where found.
-* Bugfix: Default transparent image prevents FB from choosing a poor random image for posts containing no images.
-* Bugfix: Graph meta tags are now only rendered when displaying a single post.
-* Update: Detailed setup instructions now available from the options page.
-
-= 0.2.2 =
-* Bugfix: <!--more--> tags now recognized (thanks to *tbjers*!).
-* Bugfix: Apostrophes (') no longer slashed (thanks to *dmeglio*!).
-* Update: SSL_VERIFY and ALWAYS_POST_TO_FACEBOOK constants for manual configuration.
-
-= 0.3.0 =
-* Update: Publishes to a page or profile
-* Update: More userfriendly error reporting
-* Update: New settings introduced: publishing policy (thanks to *Li-An*!) and appearance customization.
-* Major bugfixes: Scheduled and remote posts (thanks to *ksoszka*!), posting as password-protected, private or draft (thanks to *tbjers*!)
 
 = 0.3.1 =
 * Bugfix: Password protected posts: incorrect title and image was shown
@@ -83,20 +57,47 @@ Please post your question in the [forum](http://wordpress.org/tags/facebook-page
 * Bugfix: Timeout for http requests now 20s, 5s was too short on some servers (thanks to *misterjoecity*!)
 * Bugfix: Fixed error in fpp_acquire_profile_access_token (thanks to *misterjoecity*!!)
 * Update: Diagnostic script detects SSL availability and https connections (thanks to *mioto*!)
-* Update: New settings introduces: disallow publishing of post excerpt
+* Update: New settings introduced: disallow publishing of post excerpt, include links
 * Update: Thumbnail from post: use featured thumbnail, if available (thanks to *Luis Marcos Loaiza*!)
 * Update: Profile and page ID's are now automatically detected, major GUI redesign
 
-== Upgrade Notice ==
-
-= 0.2.1 =
-Bugfixes, upgrade recommended.
+= 0.3.0 =
+* Update: Publishes to a page or profile
+* Update: More userfriendly error reporting
+* Update: New settings introduced: publishing policy (thanks to *Li-An*!) and appearance customization.
+* Major bugfixes: Scheduled and remote posts (thanks to *ksoszka*!), posting as password-protected, private or draft (thanks to *tbjers*!)
 
 = 0.2.2 =
-Bugfixes, upgrade recommended.
+* Bugfix: <!--more--> tags now recognized (thanks to *tbjers*!).
+* Bugfix: Apostrophes (') no longer slashed (thanks to *dmeglio*!).
+* Update: SSL_VERIFY and ALWAYS_POST_TO_FACEBOOK constants for manual configuration.
+
+= 0.2.1 =
+* Bugfix: Not all images in a post where found.
+* Bugfix: Default transparent image prevents FB from choosing a poor random image for posts containing no images.
+* Bugfix: Graph meta tags are now only rendered when displaying a single post.
+* Update: Detailed setup instructions now available from the options page.
+
+= 0.2.0 =
+* Security: Only authors can publish to Facebook.
+* Bugfix: Only posts can be published (no pages etc.).
+* Bugfix: Character encoding for categories and title fixed.
+* Bugfix: Facebook link description length is 420 chars max.
+
+= 0.1.0 =
+* First internal alpha release.
+
+== Upgrade Notice ==
+
+= 0.3.1 =
+Updates, bugfixes, upgrade recommended.
 
 = 0.3.0 =
 Major update and bugfixes, upgrade strongly recommended.
 
-= 0.3.1 =
-Updates, bugfixes, upgrade recommended.
+
+= 0.2.2 =
+Bugfixes, upgrade recommended.
+
+= 0.2.1 =
+Bugfixes, upgrade recommended.
