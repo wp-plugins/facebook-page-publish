@@ -21,7 +21,7 @@
  * Plugin URI:  http://wordpress.org/extend/plugins/facebook-page-publish/
  * Description: Publishes your posts on the wall of a Facebook profile or page.
  * Author:      Martin Tschirsich
- * Version:     0.3.3
+ * Version:     0.3.4
  * Author URI:  http://www.tu-darmstadt.de/~m_t/
  */
 
@@ -29,7 +29,7 @@
  * Constants
  **********************************************************************/
 #error_reporting(E_ALL);
-define('VERSION', '0.3.3');
+define('VERSION', '0.3.4');
 define('BASE_DIR', dirname(__file__));
 define('BASE_URL', WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
 define('ADMIN_URL', admin_url('admin.php?page='.urlencode(plugin_basename(__FILE__))));
