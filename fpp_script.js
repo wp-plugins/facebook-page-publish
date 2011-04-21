@@ -41,7 +41,7 @@ jQuery.fn.show_object_id_list = function(anchor_id, profile_access_token) {
         var url = "https://graph.facebook.com/me/accounts?callback=?&access_token=" + profile_access_token;
         $j.getJSON(url, function(json) {
                 $j.each(json.data, function(i, fb) {
-                        if ((fb.category != "Application") && (fb.category != "Group")) {
+                        //if (fb.category != "Application") {
                                 field = $j("<div>");
                                 field.css('display', 'none');
                                 field.css('cursor','pointer');
@@ -55,9 +55,8 @@ jQuery.fn.show_object_id_list = function(anchor_id, profile_access_token) {
                                 dropdown.append(field);
                                 dropdown.show();
                                 field.show(400);
-                        }
+                        //}
                 });
 
         });
-
 };

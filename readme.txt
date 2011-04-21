@@ -1,21 +1,22 @@
 === Facebook Page Publish ===
 Contributors: mtschirs
-Tags: post, Facebook, page, profile, publish
+Tags: Facebook, page, profile, publish, wall, share, post
 Requires at least: 3.0
 Tested up to: 3.1
 Stable tag: trunk
+Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BKYW28B3GDLEY
 
 "Facebook Page Publish" publishes your blog posts to your Facebook profile or page.
 
 == Description ==
 
-"Facebook Page Publish" publishes your blog posts to the wall of your Facebook profile or page. Posts appear on the wall of your choice as if you would share a link. The authors [gravatar](http://gravatar.com), a self-choosen or random post image, the title, author, categories and a short excerpt of your post can be shown.
+"Facebook Page Publish" publishes your blog posts to the wall of your Facebook profile, page or application. Posts appear on the wall of your choice as if you would share a link - there is NO "published via Application" notification. The authors [gravatar](http://gravatar.com), a self-choosen or random post image, the title, author, categories and a short excerpt of your post can be shown.
 
-Decide yourself when and what post to publish. Local and remote publishing based e.g. on the post category.
+Decide yourself when and what posts to publish. Supports local and remote publishing based e.g. on the post category.
 
-Uses the modern Facebook graph-API and integrates easily into your WordPress Blog.
+Makes use of the modern Facebook graph-API and integrates easily into your WordPress Blog.
 
-All you need do to is (see *Installation*):
+All you need to do is (see *Installation*):
 
 * Create a [Facebook application](https://www.facebook.com/developers/createapp.php)
 
@@ -37,9 +38,28 @@ Done? Then go to the plugin's settings page and follow the detailed setup instru
 
 == Frequently Asked Questions ==
 
-= I have a question, what should I do? =
+= How can I publish to multiple walls, pages or profiles? =
+Not possible. See [Facebook Platform Policies](https://developers.facebook.com/policy), § IV:
 
-Please post your question in the [forum](http://wordpress.org/tags/facebook-page-publish)!
+    IV. Application Integration Points
+    5. You must not provide users with the option to publish more than one Stream story at a time.
+
+This also makes a great excuse for not having had the time to implement such functionality.
+
+= How can I publish to a group? =
+Also not possible, at least not the expected way without additional "published via Application XY" notice.
+
+= I can't activate the plugin because of fatal errors! =
+This plugin requires php5. Sometimes you have to add 
+`AddType x-mapp-php5 .php
+AddHandler x-mapp-php5 .php`
+to your .htaccess file.
+
+= I got an error: Your authorization code was invalid or expired =
+This happens from time to time. Give Facebook some time, they will fix it shortly.
+
+= I have an other question / idea for improvement / observed a bug! =
+Please post your question in the [forum](http://wordpress.org/tags/facebook-page-publish), I will try to reply shortly.
 
 == Screenshots ==
 
@@ -48,6 +68,14 @@ Please post your question in the [forum](http://wordpress.org/tags/facebook-page
 3. The settings page.
 
 == Changelog ==
+
+= 0.3.3 =
+* Bugfix: No more double postings when attachements included
+* Bugfix: Default publishing policy for already on WP published posts set to "publish nothing"
+* Bugfix: Design fixed for empty author or categories
+* Bugfix: Included URLs where not always seperated by whitespace
+* Update: Post to application walls
+* Update: Internationalization - German and 63% French available
 
 = 0.3.2 =
 * Critical bugfix: fpp_get_post_image crashed when theme support for post thumbnails was not supported!
@@ -92,6 +120,9 @@ Please post your question in the [forum](http://wordpress.org/tags/facebook-page
 
 == Upgrade Notice ==
 
+= 0.3.3 =
+Updates, bugfixes, upgrade recommended.
+
 = 0.3.2 =
 Critical bugfixes, upgrade strongly recommended.
 
@@ -100,7 +131,6 @@ Updates, bugfixes, upgrade recommended.
 
 = 0.3.0 =
 Major update and bugfixes, upgrade strongly recommended.
-
 
 = 0.2.2 =
 Bugfixes, upgrade recommended.
