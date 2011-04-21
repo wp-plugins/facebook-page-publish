@@ -237,7 +237,7 @@ function fpp_publish_action($post_id) {
                                         update_post_meta($post->ID, '_fpp_is_published', true);
                                         delete_post_meta($post->ID, '_fpp_is_scheduled');
                                 }
-                                else if (!$send_from_admin && (array_search('_fpp_is_scheduled', get_post_custom_keys($post->ID)) === false) && !get_post_meta($post->ID, '_fpp_is_published', true) && ($post->post_status != 'publish')) { // not send from admin panel, not already published (FB and WP), user never decided for or against publishing
+                                else if (!$send_from_admin && (array_search('_fpp_is_scheduled', get_post_custom_keys($post->ID)) === false) && !get_post_meta($post->ID, '_fpp_is_published', true) && ($_POST['original_post_status'] != 'publish')) { // not send from admin panel, not already published (FB and WP), user never decided for or against publishing
                                         if (empty($post->post_password) and fpp_get_default_publishing($post)) { // Dont post password protected posts without the users consient
                                                 fpp_publish_to_facebook($post, $options['object_id'], get_option('fpp_object_access_token'));
                                                 update_post_meta($post->ID, '_fpp_is_published', true);
