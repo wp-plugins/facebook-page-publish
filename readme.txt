@@ -69,6 +69,9 @@ Please post your question in the [forum](http://wordpress.org/tags/facebook-page
 
 == Changelog ==
 
+= 0.3.5 =
+* Bugfix: Application secret validation no longer supported by facebook in its current form
+
 = 0.3.3 =
 * Bugfix: No more double postings when attachements included
 * Bugfix: Default publishing policy for already on WP published posts set to "publish nothing"

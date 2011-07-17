@@ -29,7 +29,7 @@
  * Constants
  **********************************************************************/
 #error_reporting(E_ALL);
-define('VERSION', '0.3.4');
+define('VERSION', '0.3.5');
 define('BASE_DIR', dirname(__file__));
 define('BASE_URL', WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
 define('ADMIN_URL', admin_url('admin.php?page='.urlencode(plugin_basename(__FILE__))));
@@ -422,6 +422,12 @@ function fpp_classify_facebook_objects($object_ids) {
  * @last_review 0.3.0
  */
 function fpp_is_valid_facebook_application($app_id, $app_secret, $redirect_uri) {
+
+        // Quick fix until a patch is available:
+        return true;
+        
+        // Does no longer work (fb api behaovior changed):
+        /*
         $request = new WP_Http;
         $api_url = 'https://graph.facebook.com/oauth/access_token?client_id='.urlencode($app_id).'&client_secret='.urlencode($app_secret).'&redirect_uri='.urlencode($redirect_uri);
         $response = $request->get($api_url, array('timeout' => REQUEST_TIMEOUT, 'sslverify' => fpp_get_ssl_verify()));
@@ -430,6 +436,10 @@ function fpp_is_valid_facebook_application($app_id, $app_secret, $redirect_uri) 
                 throw new FacebookUnreachableException(!empty($response->errors) ? array_pop(array_pop($response->errors)) : '');
 
         $object = json_decode($response['body']);
+        print_r($object);
+        die;
+        return true;
+        
         if (property_exists($object, 'error')) {
                 if (property_exists($object->error, 'message')) {
                         if (strpos($object->error->message, 'Error validating client secret') !== false)
@@ -446,6 +456,7 @@ function fpp_is_valid_facebook_application($app_id, $app_secret, $redirect_uri) 
                 throw new FacebookUnexpectedErrorException();
         }
         throw new FacebookUnexpectedDataException();
+        */
 }
 
 /**
