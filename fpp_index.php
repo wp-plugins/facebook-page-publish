@@ -21,7 +21,7 @@
  * Plugin URI:  http://wordpress.org/extend/plugins/facebook-page-publish/
  * Description: Publishes your posts on the wall of a Facebook profile or page.
  * Author:      Martin Tschirsich
- * Version:     0.3.5
+ * Version:     0.3.6
  * Author URI:  http://www.tu-darmstadt.de/~m_t/
  */
 
@@ -29,7 +29,7 @@
  * Constants
  **********************************************************************/
 #error_reporting(E_ALL);
-define('VERSION', '0.3.5');
+define('VERSION', '0.3.6');
 define('BASE_DIR', dirname(__file__));
 define('BASE_URL', WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
 define('ADMIN_URL', admin_url('admin.php?page='.urlencode(plugin_basename(__FILE__))));
@@ -296,13 +296,18 @@ function fpp_publish_to_facebook($post, $object_id, $object_acces_token) {
                 $message = ''; // Password protected, no content displayed.
         }
         
-       // echo $message; 
-        
         // Publish:
         $request = new WP_Http;
-        $api_url = 'https://graph.facebook.com/'.urlencode($object_id).'/links';
+        
+        // Quick fix until facebook bug 19336 is resolved:
+        if ($object_acces_token == get_option('fpp_profile_access_token')) {
+                $api_url = 'https://graph.facebook.com/me/links';
+        } else {
+                $api_url = 'https://graph.facebook.com/me/feed';
+        }
+        
         $body = array('message' => $message, 'link' => get_permalink($post->ID), 'access_token' => $object_acces_token);
-        $response = $request->request($api_url, array('method' => 'POST', 'body' => $body, 'timeout' => REQUEST_TIMEOUT, 'sslverify' => fpp_get_ssl_verify()));
+        $response = $request->request($api_url, array('method' => 'POST', 'body' => $body, 'timeout' => REQUEST_TIMEOUT, 'sslverify' => fpp_get_ssl_verify())); 
 
         // Error detection:
         if (array_key_exists('errors', $response))
@@ -358,14 +363,15 @@ function fpp_verify_profile_access_permissions($profile_access_token, $permissio
 
 function fpp_verify_page_access_token($page_id, $page_access_token) {
         $request = new WP_Http;
-        $api_url = 'https://graph.facebook.com/'.urlencode($page_id).'/links';
-        $body = array('message' => 'dummy message', 'link' => 'invalid url', 'access_token' => $page_access_token);
-        $response = $request->request($api_url, array('method' => 'POST', 'body' => $body, 'timeout' => REQUEST_TIMEOUT, 'sslverify' => fpp_get_ssl_verify()));
+        $api_url = 'https://graph.facebook.com/'.urlencode($page_id).'?access_token='.urlencode($page_access_token);
+        $response = $request->get($api_url, array('timeout' => REQUEST_TIMEOUT, 'sslverify' => fpp_get_ssl_verify()));
 
         if (array_key_exists('errors', $response))
                 throw new FacebookUnreachableException(!empty($response->errors) ? array_pop(array_pop($response->errors)) : '');
-
-        return ($response['response']['code'] == 400); // If everything is ok, we should receive a BAD_REQUEST / 400 response, otherwise FORBIDDEN / 403:
+        
+        # TODO: verify access_permissions...
+        
+        return ($response['response']['code'] == 200); 
 }
 
 /**
