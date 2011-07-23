@@ -69,6 +69,10 @@ Please post your question in the [forum](http://wordpress.org/tags/facebook-page
 
 == Changelog ==
 
+= 0.3.7 =
+* Update: Support for custom post types added
+* Bugfix: Facebook resolved /link publishing bug http://bugs.developers.facebook.net/show_bug.cgi?id=19324
+
 = 0.3.5 =
 * Bugfix: Application secret validation no longer supported by facebook in its current form
 
@@ -122,6 +126,9 @@ Please post your question in the [forum](http://wordpress.org/tags/facebook-page
 * First internal alpha release.
 
 == Upgrade Notice ==
+
+= 0.3.7 =
+Updates, bugfixes, upgrade recommended.
 
 = 0.3.3 =
 Updates, bugfixes, upgrade recommended.

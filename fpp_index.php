@@ -21,7 +21,7 @@
  * Plugin URI:  http://wordpress.org/extend/plugins/facebook-page-publish/
  * Description: Publishes your posts on the wall of a Facebook profile or page.
  * Author:      Martin Tschirsich
- * Version:     0.3.6
+ * Version:     0.3.7
  * Author URI:  http://www.tu-darmstadt.de/~m_t/
  */
 
@@ -29,7 +29,7 @@
  * Constants
  **********************************************************************/
 #error_reporting(E_ALL);
-define('VERSION', '0.3.6');
+define('VERSION', '0.3.7');
 define('BASE_DIR', dirname(__file__));
 define('BASE_URL', WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
 define('ADMIN_URL', admin_url('admin.php?page='.urlencode(plugin_basename(__FILE__))));
@@ -86,8 +86,13 @@ class FacebookUnexpectedDataException extends CommunicationException {
 /**********************************************************************
  * Action handler
  **********************************************************************/
-add_action('future_post', 'fpp_future_action');
-add_action('publish_post', 'fpp_publish_action');
+ 
+ # Add publish actions for all post types (posts, pages, attachements, custom post types):
+$post_types = get_post_types(array('exclude_from_search' => false), 'objects');
+foreach ($post_types as $post_type) {
+        add_action('future_'.$post_type->name, 'fpp_future_action');
+        add_action('publish_'.$post_type->name, 'fpp_publish_action');
+}
 
 add_action('admin_init', 'fpp_admin_init_action');
 add_action('admin_menu', 'fpp_admin_menu_action');
@@ -107,7 +112,7 @@ function fpp_init_action() {
 function fpp_head_action() {
         global $post;
 
-        if (is_object($post) && ($post->post_type == 'post') && is_single()) {
+        if (is_object($post) /*&& ($post->post_type == 'post') */ && is_singular()) {
                 fpp_render_meta_tags($post);
         }
 }
@@ -172,7 +177,7 @@ function fpp_admin_print_styles_action() {
 function fpp_post_submitbox_start_action() {
         global $post;
 
-        if (is_object($post) and ($post->post_type == 'post') and current_user_can('publish_posts')) {
+        if (is_object($post) and /*($post->post_type == 'post') and*/ current_user_can('publish_posts')) {
                 fpp_render_post_button();
         }
 }
@@ -193,7 +198,7 @@ function fpp_future_action($post_id) {
         
         if ($send_from_admin) {
                 $post = get_post($post_id);
-                if (($post->post_type == 'post')) {
+                if (/*($post->post_type == 'post')*/ true) {
                         if (!empty($_REQUEST['fpp_post_to_facebook'])) { // Directly send from the user (admin panel) with active checkbox
                                 $options = get_option('fpp_options');
                                 update_post_meta($post->ID, '_fpp_is_scheduled', true);
@@ -218,7 +223,7 @@ function fpp_future_action($post_id) {
  */
 function fpp_publish_action($post_id) {
         $post = get_post($post_id);
-        if (($post->post_type == 'post')) {
+        if (/*($post->post_type == 'post')*/ true) {
         
                 $object_access_token = get_option('fpp_object_access_token');
                 if (!empty($object_access_token)) { // Incomplete plugin configuration, do nothing, report no error
@@ -299,12 +304,8 @@ function fpp_publish_to_facebook($post, $object_id, $object_acces_token) {
         // Publish:
         $request = new WP_Http;
         
-        // Quick fix until facebook bug 19336 is resolved:
-        if ($object_acces_token == get_option('fpp_profile_access_token')) {
-                $api_url = 'https://graph.facebook.com/me/links';
-        } else {
-                $api_url = 'https://graph.facebook.com/me/feed';
-        }
+        // Facebook bug 19336 is resolved, so /links should work (usage of /feed no longer necessary):
+        $api_url = 'https://graph.facebook.com/me/links';
         
         $body = array('message' => $message, 'link' => get_permalink($post->ID), 'access_token' => $object_acces_token);
         $response = $request->request($api_url, array('method' => 'POST', 'body' => $body, 'timeout' => REQUEST_TIMEOUT, 'sslverify' => fpp_get_ssl_verify())); 
@@ -428,23 +429,14 @@ function fpp_classify_facebook_objects($object_ids) {
  * @last_review 0.3.0
  */
 function fpp_is_valid_facebook_application($app_id, $app_secret, $redirect_uri) {
-
-        // Quick fix until a patch is available:
-        return true;
-        
-        // Does no longer work (fb api behaovior changed):
-        /*
         $request = new WP_Http;
-        $api_url = 'https://graph.facebook.com/oauth/access_token?client_id='.urlencode($app_id).'&client_secret='.urlencode($app_secret).'&redirect_uri='.urlencode($redirect_uri);
+        $api_url = 'https://graph.facebook.com/oauth/access_token?client_id='.urlencode($app_id).'&client_secret='.urlencode($app_secret).'&redirect_uri='.urlencode($redirect_uri).'&code=SOME_INVALID_CODE';
         $response = $request->get($api_url, array('timeout' => REQUEST_TIMEOUT, 'sslverify' => fpp_get_ssl_verify()));
 
         if (array_key_exists('errors', $response))
                 throw new FacebookUnreachableException(!empty($response->errors) ? array_pop(array_pop($response->errors)) : '');
 
         $object = json_decode($response['body']);
-        print_r($object);
-        die;
-        return true;
         
         if (property_exists($object, 'error')) {
                 if (property_exists($object->error, 'message')) {
@@ -462,7 +454,6 @@ function fpp_is_valid_facebook_application($app_id, $app_secret, $redirect_uri) 
                 throw new FacebookUnexpectedErrorException();
         }
         throw new FacebookUnexpectedDataException();
-        */
 }
 
 /**
