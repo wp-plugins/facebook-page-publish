@@ -702,7 +702,7 @@ function fpp_get_post_image($post) {
         }
         
         if (empty($image_url)) { // Image from post content and/or excerpt
-                preg_match('/<img .*?src=["|\']([^"|\']+)/i', $post->post_content.$post->post_excerpt, $matches);
+                preg_match('/<img .*?src=["|\']([^"|\']+)/i', $post->post_excerpt.$post->post_content, $matches);
                 if (!empty($matches[1])) $image_url = $matches[1];
         }
         
@@ -711,7 +711,7 @@ function fpp_get_post_image($post) {
                 if (!empty($images)) {
                         foreach ($images as $image_id => $value) {
                                 $image = wp_get_attachment_image_src($image_id);
-                                return $image[0];
+                                $image_url = $image[0];
                                 break;
                         }
                 }
@@ -937,6 +937,9 @@ function fpp_render_options_page() {
 function fpp_render_meta_tags($post) {
         $options = get_option('fpp_options');
 
+        echo '<meta property="og:type" content="article"/>'; // Required by FB
+        echo '<meta property="og:url" content="'.esc_attr(get_permalink($post->ID)).'"/>'; // Required by FB
+        
         echo '<meta property="og:title" content="'.esc_attr($post->post_title)/*, ENT_COMPAT, 'UTF-8')*/.'"/>';
         
         $description = array();
@@ -964,7 +967,15 @@ function fpp_render_meta_tags($post) {
                 }
         }
         if (!isset($image_url) or empty($image_url)) {
-                 $image_url = $options['default_thumbnail_url'];
+                if (!empty($options['default_thumbnail_url'])) {
+                        $image_url = $options['default_thumbnail_url'];
+                } else {
+                        if ($options['show_post_categories'] or $options['show_post_author']) {
+                                $image_url = FPP_BASE_URL.'line.png';
+                        } else {
+                                $image_url = FPP_BASE_URL.'line_small.png';
+                        }
+                 }
         }
         echo '<meta property="og:image" content="'.esc_attr($image_url)/*, ENT_COMPAT, 'UTF-8')*/.'"/>';
 }

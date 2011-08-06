@@ -72,6 +72,7 @@ Please post your question in the [forum](http://wordpress.org/tags/facebook-page
 = 0.3.8 =
 * Update: Deletes previous version from Facebook when republishing a post (old Facebook comments will get lost)
 * Update: Use post content as message if post extract contains no plain text (but is not empty)
+* Update: Facebook requires now a type and url graph meta tag, both are now included
 * Bugfix: /me replaced by object_id (thanks to *Niraj Shah*!)
 * Bugfix: Compatibility issues with some other plugins resolved
 
