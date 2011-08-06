@@ -2,7 +2,7 @@
 Contributors: mtschirs
 Tags: Facebook, page, profile, publish, wall, share, post
 Requires at least: 3.0
-Tested up to: 3.1
+Tested up to: 3.2
 Stable tag: trunk
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BKYW28B3GDLEY
 
@@ -10,7 +10,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 
 == Description ==
 
-"Facebook Page Publish" publishes your blog posts to the wall of your Facebook profile, page or application. Posts appear on the wall of your choice as if you would share a link - there is NO "published via Application" notification. The authors [gravatar](http://gravatar.com), a self-choosen or random post image, the title, author, categories and a short excerpt of your post can be shown.
+"Facebook Page Publish" publishes your blog posts to the wall of your Facebook profile, page or application. Posts appear on the wall of your choice as if you would share a link (there is NO "published via Application" notification). The authors [gravatar](http://gravatar.com), a self-choosen or random post image, the title, author, categories and a short excerpt of your post can be shown.
 
 Decide yourself when and what posts to publish. Supports local and remote publishing based e.g. on the post category.
 
@@ -39,7 +39,7 @@ Done? Then go to the plugin's settings page and follow the detailed setup instru
 == Frequently Asked Questions ==
 
 = How can I publish to multiple walls, pages or profiles? =
-Not possible. See [Facebook Platform Policies](https://developers.facebook.com/policy), § IV:
+Not possible. See [Facebook Platform Policies](https://developers.facebook.com/policy), IV:
 
     IV. Application Integration Points
     5. You must not provide users with the option to publish more than one Stream story at a time.
@@ -68,6 +68,12 @@ Please post your question in the [forum](http://wordpress.org/tags/facebook-page
 3. The settings page.
 
 == Changelog ==
+
+= 0.3.8 =
+* Update: Deletes previous version from Facebook when republishing a post (old Facebook comments will get lost)
+* Update: Use post content as message if post extract contains no plain text (but is not empty)
+* Bugfix: /me replaced by object_id (thanks to *Niraj Shah*!)
+* Bugfix: Compatibility issues with some other plugins resolved
 
 = 0.3.7 =
 * Update: Support for custom post types added
@@ -126,6 +132,9 @@ Please post your question in the [forum](http://wordpress.org/tags/facebook-page
 * First internal alpha release.
 
 == Upgrade Notice ==
+
+= 0.3.8 =
+Updates, bugfixes, upgrade recommended.
 
 = 0.3.7 =
 Updates, bugfixes, upgrade recommended.
