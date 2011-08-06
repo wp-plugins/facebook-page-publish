@@ -349,6 +349,8 @@ function fpp_publish_to_facebook($post, $object_id, $object_acces_token) {
 function fpp_extract_message($string, $include_links) {
         $message = do_shortcode($string);
 
+        $message = preg_replace('~<\s*\bscript\b[^>]*>(.*?)<\s*\/\s*script\s*>~is', '', $message); // Filter javascript code
+        
         if ($include_links) {
                 $message = wp_kses($message, array('a' => array('href' => array())));
                 $message = preg_replace('/<a[^>]*?href=["|\']([^"|\']+).[^>]*?>(.*?)<\/a>\s*/is', '${2} ${1} ', $message);
