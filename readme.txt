@@ -27,6 +27,8 @@ Technical features:
 
 == Installation ==
 
+Bob from http://wpvideo.tv made a nice [Installation How-To](http://wpvideo.tv/wordpress-blog-posts-auto-feed-facebook-fan-page/wordpress/682/)!
+
 1. Install the plugin from your wordpress admin panel.
 
 OR
