@@ -21,7 +21,7 @@
  * Plugin URI:  http://wordpress.org/extend/plugins/facebook-page-publish/
  * Description: Publishes your posts on the wall of a Facebook profile or page.
  * Author:      Martin Tschirsich
- * Version:     0.3.8
+ * Version:     0.3.9
  * Author URI:  http://www.tu-darmstadt.de/~m_t/
  */
 
@@ -29,7 +29,7 @@
  * Constants
  **********************************************************************/
 #error_reporting(E_ALL);
-define('FPP_VERSION', '0.3.8');
+define('FPP_VERSION', '0.3.9');
 define('FPP_BASE_DIR', dirname(__file__));
 define('FPP_BASE_URL', WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
 define('FPP_ADMIN_URL', admin_url('admin.php?page='.urlencode(plugin_basename(__FILE__))));
@@ -239,18 +239,24 @@ function fpp_publish_action($post_id) {
                         
                         $options = get_option('fpp_options');
                         try {
-                                // If post was already published, delete it from FB:
-                                $post_id = get_post_meta($post->ID, '_fpp_post_id', true);
-                                if (!empty($post_id)) { // Old posts (version <= 0.3.7) do not contain a post_id 
-                                        fpp_unpublish_from_facebook($post_id, $options['object_id'], get_option('fpp_object_access_token'));
-                                }
-                                
                                 if ($send_from_admin && !empty($_REQUEST['fpp_post_to_facebook'])) { // Directly send from the user (admin panel) with active post checkbox
+                                        // If post was already published, delete it from FB:
+                                        $post_id = get_post_meta($post->ID, '_fpp_post_id', true);
+                                        if (!empty($post_id)) { // Old posts (version <= 0.3.7) do not contain a post_id 
+                                                fpp_unpublish_from_facebook($post_id, $options['object_id'], get_option('fpp_object_access_token'));
+                                        }
+                                
                                         $post_id = fpp_publish_to_facebook($post, $options['object_id'], get_option('fpp_object_access_token'));
                                         update_post_meta($post->ID, '_fpp_is_published', true);
                                         update_post_meta($post->ID, '_fpp_post_id', $post_id);
                                 }
                                 else if (get_post_meta($post->ID, '_fpp_is_scheduled', true) == true) { // Scheduled post previously marked for Facebook publishing by the user
+                                        // If post was already published, delete it from FB:
+                                        $post_id = get_post_meta($post->ID, '_fpp_post_id', true);
+                                        if (!empty($post_id)) { // Old posts (version <= 0.3.7) do not contain a post_id 
+                                                fpp_unpublish_from_facebook($post_id, $options['object_id'], get_option('fpp_object_access_token'));
+                                        }
+                                        
                                         $post_id = fpp_publish_to_facebook($post, $options['object_id'], get_option('fpp_object_access_token'));
                                         update_post_meta($post->ID, '_fpp_is_published', true);
                                         delete_post_meta($post->ID, '_fpp_is_scheduled');
@@ -258,6 +264,12 @@ function fpp_publish_action($post_id) {
                                 }
                                 else if (!$send_from_admin && (array_search('_fpp_is_scheduled', get_post_custom_keys($post->ID)) === false) && !get_post_meta($post->ID, '_fpp_is_published', true) && ($_POST['original_post_status'] != 'publish')) { // not send from admin panel, not already published (FB and WP), user never decided for or against publishing
                                         if (empty($post->post_password) and fpp_get_default_publishing($post)) { // Dont post password protected posts without the users consient
+                                                // If post was already published, delete it from FB:
+                                                $post_id = get_post_meta($post->ID, '_fpp_post_id', true);
+                                                if (!empty($post_id)) { // Old posts (version <= 0.3.7) do not contain a post_id 
+                                                        fpp_unpublish_from_facebook($post_id, $options['object_id'], get_option('fpp_object_access_token'));
+                                                }
+                                                
                                                 $post_id = fpp_publish_to_facebook($post, $options['object_id'], get_option('fpp_object_access_token'));
                                                 update_post_meta($post->ID, '_fpp_is_published', true);
                                                 update_post_meta($post->ID, '_fpp_post_id', $post_id);
@@ -287,12 +299,12 @@ function fpp_publish_to_facebook($post, $object_id, $object_acces_token) {
         $options = get_option('fpp_options');
         
         if (empty($post->post_password) and $options['show_post_text']) {
-                $message = fpp_extract_message($post->post_excerpt, $options['show_post_link']);
-                if (empty($message)) $message = fpp_extract_message($post->post_content, $options['show_post_link']);
+                $message = fpp_extract_message(apply_filters('the_excerpt', $post->post_excerpt), $options['show_post_link']);
+                if (empty($message)) $message = fpp_extract_message(apply_filters('the_content', $post->post_content), $options['show_post_link']);
                 
                 if ($options['show_post_link']) {
                         $message = wp_kses($message, array('a' => array('href' => array())));
-                        $message = preg_replace('/<a[^>]*?href=["|\']([^"|\']+).[^>]*?>(.*?)<\/a>\s*/is', '${2} ${1} ', $message);
+                        $message = preg_replace('/<a[^>]*?href *= *["|\']([^"|\']+).[^>]*?>(.*?)<\/a>\s*/is', '${2} ${1} ', $message);
                         $message = trim(stripslashes(html_entity_decode($message, ENT_QUOTES, 'UTF-8')));
                 }
                 else {
@@ -349,11 +361,13 @@ function fpp_publish_to_facebook($post, $object_id, $object_acces_token) {
 function fpp_extract_message($string, $include_links) {
         $message = do_shortcode($string);
 
-        $message = preg_replace('~<\s*\bscript\b[^>]*>(.*?)<\s*\/\s*script\s*>~is', '', $message); // Filter javascript code
+        $message = preg_replace('~<\s*\bscript\b[^>]*>(.*?)<\s*\/\s*script\s*>~is', '', $message); // Remove javascript code (not only tags)
+        
+        $message = preg_replace('/<!--(.*)-->/Uis', '', $message); // Remove HTML comments (not only tags)
         
         if ($include_links) {
                 $message = wp_kses($message, array('a' => array('href' => array())));
-                $message = preg_replace('/<a[^>]*?href=["|\']([^"|\']+).[^>]*?>(.*?)<\/a>\s*/is', '${2} ${1} ', $message);
+                $message = preg_replace('/<a[^>]*?href *= *["|\']([^"|\']+).[^>]*?>(.*?)<\/a>\s*/is', '${2} ${1} ', $message);
                 $message = trim(stripslashes(html_entity_decode($message, ENT_QUOTES, 'UTF-8')));
         }
         else {
@@ -366,9 +380,6 @@ function fpp_extract_message($string, $include_links) {
         if (strpos($message, '<!--more-->') !== false) {
                 $message = substr($message, 0, strpos($message, '<!--more-->'));
         }
-
-        // Remove HTML Comments:
-        $message = preg_replace('/<!--(.*)-->/Uis', '', $message);
 
         if (strlen($message) >= FPP_FACEBOOK_LINK_DESCRIPTION_MAX_LENGTH) {
                 $last_space_pos = strrpos(substr($message, 0, FPP_FACEBOOK_LINK_DESCRIPTION_MAX_LENGTH - 3), ' ');
@@ -666,7 +677,7 @@ function fpp_get_required_permissions($object_type) {
  */
 function fpp_get_post_author($post) {
         $user_info = get_userdata($post->post_author);
-        $author = trim($user_info->first_name.' '.$user_info->last_name);
+        $author = trim(apply_filters('the_author', $user_info->display_name));
         if (empty($author)) {
                 $author = $user_info->user_login;
         }
@@ -683,7 +694,7 @@ function fpp_get_post_categories($post) {
         if (!empty($categories)) {
                 $description = $categories[0]->cat_name;
                 for ($i = 1; $i < sizeof($categories); ++$i)
-                        $description .= ', '.$categories[$i]->cat_name;
+                        $description .= ', '.apply_filters('the_category', $categories[$i]->cat_name);
         }
         return $description;
 }
@@ -942,7 +953,7 @@ function fpp_render_meta_tags($post) {
         echo '<meta property="og:type" content="article"/>'; // Required by FB
         echo '<meta property="og:url" content="'.esc_attr(get_permalink($post->ID)).'"/>'; // Required by FB
         
-        echo '<meta property="og:title" content="'.esc_attr($post->post_title)/*, ENT_COMPAT, 'UTF-8')*/.'"/>';
+        echo '<meta property="og:title" content="'.esc_attr(apply_filters('the_title', $post->post_title))/*, ENT_COMPAT, 'UTF-8')*/.'"/>';
         
         $description = array();
         if ($options['show_post_author']) {

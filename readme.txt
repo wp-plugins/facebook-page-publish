@@ -71,6 +71,10 @@ Please post your question in the [forum](http://wordpress.org/tags/facebook-page
 
 == Changelog ==
 
+= 0.3.9 =
+* Update: Compatibility issues with other plugins that use filters resolved (thanks to *John DoeXAXA*!)
+* Bugfix: Posts modified, but not republished on FB are no longer deleted from FB (thanks to *OurRVJourney*!)
+
 = 0.3.8 =
 * Update: Deletes previous version from Facebook when republishing a post (old Facebook comments will get lost)
 * Update: Use post content as message if post extract contains no plain text (but is not empty)
@@ -135,6 +139,13 @@ Please post your question in the [forum](http://wordpress.org/tags/facebook-page
 * First internal alpha release.
 
 == Upgrade Notice ==
+
+
+= 0.3.9 =
+Updates, bugfixes, upgrade recommended.
+
+= 0.3.8 =
+Updates, bugfixes, upgrade recommended.
 
 = 0.3.8 =
 Updates, bugfixes, upgrade recommended.
